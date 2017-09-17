@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # written by ben rohald 2017
-@operators = ("+","-","*","/","//","%","**");
+# @operators = ("+","-","*","/","//","%","**");
 
 while ($line = <>) {
 
@@ -15,7 +15,7 @@ while ($line = <>) {
         # Blank & comment lines can be passed unchanged
         print $line;
 
-    } elsif ($line =~ /^\s*print\(("*)(.*)"*\)$/) {
+    } elsif ($line =~ /^\s*print\(("*)(.*?)"*\)$/) {
         $print_content = $2;
         if ($1) {
             print "print \"$2\\n\";\n";
