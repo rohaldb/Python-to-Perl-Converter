@@ -3,6 +3,7 @@
 # written by ben rohald 2017
 
 while ($line = <>) {
+
     if ($line =~ /^#!/ && $. == 1) {
 
         # translate #! line
@@ -20,6 +21,7 @@ while ($line = <>) {
         } else {
             #we are printing a variable
             foreach $var (@variables) {
+
                 $print_content =~ s/$var/\$$var/g;
             }
             print "print \"$print_content\\n\";\n";
