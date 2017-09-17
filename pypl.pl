@@ -1,9 +1,11 @@
 #!/usr/bin/perl -w
 
 # written by ben rohald 2017
-# @operators = ("+","-","*","/","//","%","**");
+# + - * / // % **
 
 while ($line = <>) {
+
+    $line = sanitizeOperations($line);
 
     if ($line =~ /^#!/ && $. == 1) {
 
@@ -47,4 +49,20 @@ while ($line = <>) {
         # Lines we can't translate are turned into comments
         print "#$line\n";
     }
+}
+
+#formats all operations to be space separated
+sub sanitizeOperations {
+    $line = $_[0];
+    $line =~ s/\+/ + /g;
+    $line =~ s/-/ - /g;
+    $line =~ s/\*/ * /g;
+    $line =~ s/\// \/ /g;
+    $line =~ s/\/\// \/\/ /g;
+    $line =~ s/\* \*/ \*\* /g;
+    $line =~ s/%/ % /g;
+    $line =~ s/  */ /g;
+    $line =~ s/\* \*/\*\*/g;
+    $line =~ s/\/ \//\/\//g;
+    return $line;
 }
