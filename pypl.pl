@@ -8,40 +8,34 @@ while ($line = <>) {
     $line = sanitizeOperations($line);
 
     if ($line =~ /^#!/ && $. == 1) {
-
         # translate #! line
         print "#!/usr/bin/perl -w\n";
-
     } elsif ($line =~ /^\s*(#|$)/) {
-
         # Blank & comment lines can be passed unchanged
         print $line;
-
     } elsif ($line =~ /^\s*print\(("*)(.*?)"*\)$/) {
         $print_content = $2;
         if ($1) {
+            # printing a string
             print "print \"$2\\n\";\n";
         } else {
-            #we are printing variables
-            foreach $var (@variables) {
-                $print_content =~ s/$var/\$$var/g;
-            }
+            #print contains variables
+            $print_content = insertDollars($print_content);
 
             if ($print_content =~ /\+|-|\*|\/|%/){
+                #printing an expression
                 print "print $print_content, \"\\n\";\n";
             } else {
+                #printing a variable
                 print "print \"$print_content\\n\";\n";
             }
         }
 
     } elsif ($line =~ /^\s*(.*?)\s*=\s*(.*)/) {
-        $lhs = $1;
-        $rhs = $2;
-        $lhs =~ s/ *//g;
+        #assignment of a variable
+        $lhs = $1; $rhs = $2;
         push @variables, $lhs;
-        foreach $var (@variables) {
-            $rhs =~ s/$var/\$$var/g;
-        }
+        $rhs = insertDollars($rhs);
         # variable assignment
         print "\$$lhs = $rhs;\n";
     } else {
@@ -65,4 +59,12 @@ sub sanitizeOperations {
     $line =~ s/\* \*/\*\*/g;
     $line =~ s/\/ \//\/\//g;
     return $line;
+}
+
+sub insertDollars {
+    $str = $_[0];
+    foreach $var (@variables) {
+        $str =~ s/$var/\$$var/g;
+    }
+    return $str;
 }
