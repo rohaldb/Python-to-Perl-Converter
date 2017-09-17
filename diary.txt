@@ -1,6 +1,10 @@
-Date:
-Start:
-Stop:
-Activity:
-Comments:
+Date: 17/9
+Start: 2pm
+Stop: 4:30pm
+Activity: set up, begin working on subset 1
+------------------------------------------------
+Date: 17/9
+Start: 7pm
+Stop: 9:30pm
+Activity: variable assignment, variable printing and expression printing. Subset 1 complete
 ------------------------------------------------
