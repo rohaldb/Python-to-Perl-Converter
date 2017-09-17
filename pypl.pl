@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 # written by ben rohald 2017
+@operators = ("+","-","*","/","//","%","**");
 
 while ($line = <>) {
 
@@ -19,12 +20,16 @@ while ($line = <>) {
         if ($1) {
             print "print \"$2\\n\";\n";
         } else {
-            #we are printing a variable
+            #we are printing variables
             foreach $var (@variables) {
-
                 $print_content =~ s/$var/\$$var/g;
             }
-            print "print \"$print_content\\n\";\n";
+
+            if ($print_content =~ /\+|-|\*|\/|%/){
+                print "print $print_content, \"\\n\";\n";
+            } else {
+                print "print \"$print_content\\n\";\n";
+            }
         }
 
     } elsif ($line =~ /^\s*(.*?)\s*=\s*(.*)/) {
