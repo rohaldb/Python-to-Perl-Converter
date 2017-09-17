@@ -25,7 +25,7 @@ while ($line = <>) {
             print "print \"$print_content\\n\";\n";
         }
 
-    } elsif ($line =~ /^\s*(.*)=(.*)/) {
+    } elsif ($line =~ /^\s*(.*?)\s*=\s*(.*)/) {
         $lhs = $1;
         $rhs = $2;
         $lhs =~ s/ *//g;
@@ -34,7 +34,7 @@ while ($line = <>) {
             $rhs =~ s/$var/\$$var/g;
         }
         # variable assignment
-        print "\$$lhs=$rhs;\n";
+        print "\$$lhs = $rhs;\n";
     } else {
 
         # Lines we can't translate are turned into comments
