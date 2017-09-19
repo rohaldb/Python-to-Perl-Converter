@@ -1,9 +1,8 @@
 #!/usr/bin/perl -w
-
+use strict;
 # written by ben rohald 2017
 # + - * / // % **
-
-while ($line = <>) {
+while (my $line = <>) {
 
     $line = sanitizeOperations($line);
 
@@ -14,13 +13,13 @@ while ($line = <>) {
         # Blank & comment lines can be passed unchanged
         print $line;
     } elsif ($line =~ /^\s*print\(("*)(.*?)"*\)$/) {
-        $print_content = $2;
+        my $print_content = $2;
         if ($1) {
             # printing a string
             print "print \"$2\\n\";\n";
         } else {
             #print contains variables
-            $print_content = insertDollars($print_content);
+            my $print_content = insertDollars($print_content);
 
             if ($print_content =~ /\+|-|\*|\/|%/){
                 #printing an expression
@@ -33,13 +32,13 @@ while ($line = <>) {
 
     } elsif ($line =~ /^\s*(.*?)\s*=\s*(.*)/) {
         #assignment of a variable
-        $lhs = $1; $rhs = $2;
+        my $lhs = $1; my $rhs = $2;
+        our @variables;
         push @variables, $lhs;
         $rhs = insertDollars($rhs);
         # variable assignment
         print "\$$lhs = $rhs;\n";
     } else {
-
         # Lines we can't translate are turned into comments
         print "#$line\n";
     }
@@ -47,7 +46,7 @@ while ($line = <>) {
 
 #formats all operations to be space separated
 sub sanitizeOperations {
-    $line = $_[0];
+    my $line = $_[0];
     $line =~ s/\+/ + /g;
     $line =~ s/-/ - /g;
     $line =~ s/\*/ * /g;
@@ -61,9 +60,10 @@ sub sanitizeOperations {
     return $line;
 }
 
+# inserts $before known variables in a string param
 sub insertDollars {
-    $str = $_[0];
-    foreach $var (@variables) {
+    my $str = $_[0];
+    foreach my $var (our @variables) {
         $str =~ s/$var/\$$var/g;
     }
     return $str;
