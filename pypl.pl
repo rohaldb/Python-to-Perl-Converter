@@ -18,34 +18,42 @@ sub patternMatch {
         # Blank & comment lines can be passed unchanged
         print $line;
     } elsif ($line =~ /^\s*print\(("*)(.*?)"*\)$/) {
-        my $print_content = $2;
-        if ($1) {
-            # printing a string
-            print "print \"$2\\n\";\n";
-        } else {
-            #print contains variables
-            my $print_content = insertDollars($print_content);
-
-            if ($print_content =~ /\+|-|\*|\/|%/){
-                #printing an expression
-                print "print $print_content, \"\\n\";\n";
-            } else {
-                #printing a variable
-                print "print \"$print_content\\n\";\n";
-            }
-        }
+        #printing a string
+        printString($1,$2);
 
     } elsif ($line =~ /^\s*(.*?)\s*=\s*(.*)/) {
         #assignment of a variable
-        my $lhs = $1; my $rhs = $2;
-        push @variables, $lhs;
-        $rhs = insertDollars($rhs);
-        # variable assignment
-        print "\$$lhs = $rhs;\n";
+        variableAssignment($1,$2);
     } else {
         # Lines we can't translate are turned into comments
         print "#$line\n";
     }
+}
+
+sub printString() {
+    my ($quotation,$print_content) = @_;
+    if ($quotation) {
+        # printing a string
+        print "print \"$print_content\\n\";\n";
+    } else {
+        #print contains variables
+        my $print_content = insertDollars($print_content);
+
+        if ($print_content =~ /\+|-|\*|\/|%/){
+            #printing an expression
+            print "print $print_content, \"\\n\";\n";
+        } else {
+            #printing a variable
+            print "print \"$print_content\\n\";\n";
+        }
+    }
+}
+
+sub variableAssignment {
+    my ($lhs,$rhs) = @_;
+    push @variables, $lhs;
+    $rhs = insertDollars($rhs);
+    print "\$$lhs = $rhs;\n";
 }
 
 #formats all operations to be space separated
