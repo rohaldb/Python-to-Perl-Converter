@@ -2,8 +2,13 @@
 use strict;
 # written by ben rohald 2017
 # + - * / // % **
+our @variables;
 while (my $line = <>) {
+    patternMatch($line);
+}
 
+sub patternMatch {
+    my $line = $_[0];
     $line = sanitizeOperations($line);
 
     if ($line =~ /^#!/ && $. == 1) {
@@ -33,7 +38,6 @@ while (my $line = <>) {
     } elsif ($line =~ /^\s*(.*?)\s*=\s*(.*)/) {
         #assignment of a variable
         my $lhs = $1; my $rhs = $2;
-        our @variables;
         push @variables, $lhs;
         $rhs = insertDollars($rhs);
         # variable assignment
@@ -63,7 +67,7 @@ sub sanitizeOperations {
 # inserts $before known variables in a string param
 sub insertDollars {
     my $str = $_[0];
-    foreach my $var (our @variables) {
+    foreach my $var (@variables) {
         $str =~ s/$var/\$$var/g;
     }
     return $str;
