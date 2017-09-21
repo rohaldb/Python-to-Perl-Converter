@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
-use strict;
+
 # written by ben rohald 2017
-# + - * / // % **
+use strict;
+
 our @variables;
 our $indentation = 0;
 
@@ -25,14 +26,14 @@ sub patternMatch {
     } elsif ($line =~ /\s*if\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "if");
-    } elsif ($line =~ /^\s*print\(("*)(.*?)"*\)$/) {
+    } elsif ($line =~ /^\s*print\s*\(("*)(.*?)"*\)$/) {
         #printing a string
         printIndentation();
         printString($1,$2);
-    } elsif ($line =~ /^\s*(.*?)\s*=\s*(.*)/) {
+    } elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=)\s*(.*)/) {
         #assignment of a variable
         printIndentation();
-        variableAssignment($1,$2);
+        variableAssignment($1,$2,$3);
     } else {
         # Lines we can't translate are turned into comments
         printIndentation();
@@ -44,7 +45,8 @@ sub sanitizeOperators {
   my $line = $_[0];
   #while we have an invalid // operator, swap it
   while ($line =~ /((\w+)\s*\/\/\s*(\w+))/) {
-    $line =~ s/$1/int($2\/$3)/g;
+    my $full = $1; my $divisor1 = $2; my $divisor2 = $3;
+    $line =~ s/$full/int($divisor1\/$divisor2)/g;
   }
   #swap <> for !=
   $line =~ s/<>/!=/g;
@@ -101,7 +103,8 @@ sub printString {
 }
 
 sub variableAssignment {
-    my ($lhs,$rhs) = @_;
+    my ($lhs,$operator, $rhs) = @_;
+    # print "'$lhs' '$operator' '$rhs'\n";
     #check if first declaration or updating
     my $exists = 0;
     foreach my $var (@variables) {
@@ -109,7 +112,16 @@ sub variableAssignment {
     }
     push @variables, $lhs unless ($exists);
     $rhs = insertDollars($rhs);
-    print "\$$lhs = $rhs;\n";
+    print "\$$lhs $operator $rhs;\n";
+}
+
+# inserts $before known variables in a string param
+sub insertDollars {
+    my $str = $_[0];
+    foreach my $var (our @variables) {
+        $str =~ s/\b$var\b/\$$var/g;
+    }
+    return $str;
 }
 
 sub printIndentation {
@@ -131,14 +143,9 @@ sub spaceOperators {
     $line =~ s/  */ /g;
     $line =~ s/\* \*/\*\*/g;
     $line =~ s/\/ \//\/\//g;
+    $line =~ s/\+ =/\+=/g;
+    $line =~ s/- =/-=/g;
+    $line =~ s/\* =/\*=/g;
+    $line =~ s/\/ =/\/=/g;
     return $line;
-}
-
-# inserts $before known variables in a string param
-sub insertDollars {
-    my $str = $_[0];
-    foreach my $var (our @variables) {
-        $str =~ s/\b$var\b/\$$var/g;
-    }
-    return $str;
 }
