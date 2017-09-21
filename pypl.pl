@@ -4,7 +4,6 @@ use strict;
 # + - * / // % **
 our @variables;
 our $indentation = 0;
-
 while (my $line = <>) {
     patternMatch($line);
 }
@@ -120,6 +119,8 @@ sub sanitizeOperations {
       my $whole = $1; my $divisor1 = $2; my $divisor2 = $3;
       $line =~ s/$whole/int($divisor1\/$divisor2)/g;
     }
+    #swap <> for !=
+    $line =~ s/<>/!=/g;
     return $line;
 }
 
