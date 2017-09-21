@@ -21,7 +21,10 @@ sub patternMatch {
         print $line;
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
-        whileStatement($1,$2);
+        conditionalStatement($1,$2, "while");
+    } elsif ($line =~ /\s*if\s*(.*?)\s*:\s*(.*)/) {
+        #while statement, be it inline or multiline
+        conditionalStatement($1,$2, "if");
     } elsif ($line =~ /^\s*print\(("*)(.*?)"*\)$/) {
         #printing a string
         printIndentation();
@@ -37,26 +40,28 @@ sub patternMatch {
     }
 }
 
-sub whileStatement {
-  my ($condition, $optional_inline) = @_;
+#used to handle if and while statments
+sub conditionalStatement {
+  #in the format if/while(condition): optional_inline; optional_inline
+  #type = while vs if
+  my ($condition, $optional_inline, $type) = @_;
 
   printIndentation();
   $condition = insertDollars($condition);
-  print "while ($condition) {\n";
+  print "$type ($condition) {\n";
   $indentation++;
 
   if (!$optional_inline) {
-    #just a while statement
+    #just a if/while statement
     $condition = insertDollars($condition);
   } else {
+    #may have multiple inline statements, split them up and handle each appropriately
     my @statements = split '\s*;\s*', $optional_inline;
     foreach my $statement (@statements) {
         patternMatch($statement);
     }
-    # print "statements are = '@statements'\n";
     $indentation--;
     printIndentation(); print "}\n";
-    # print "inline, while '$condition', do '$1' then do '$2'";
   }
 }
 
