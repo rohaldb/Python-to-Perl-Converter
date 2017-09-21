@@ -50,7 +50,6 @@ sub sanitizeOperators {
   $line =~ s/<>/!=/g;
   # if line starts with not, add brackting format
   if ($line =~ /(\bnot\b\s*(.*))/) {
-    print "'$1' , '$2'\n";
     $line = "not($2)";
   }
   return $line;
