@@ -4,13 +4,14 @@ use strict;
 # + - * / // % **
 our @variables;
 our $indentation = 0;
+
 while (my $line = <>) {
     patternMatch($line);
 }
 
 sub patternMatch {
     my $line = $_[0];
-    $line = sanitizeOperations($line);
+    $line = spaceOperators($line);
 
     if ($line =~ /^#!/ && $. == 1) {
         # translate #! line
@@ -39,12 +40,29 @@ sub patternMatch {
     }
 }
 
+sub sanitizeOperators {
+  my $line = $_[0];
+  #while we have an invalid // operator, swap it
+  while ($line =~ /((\w+)\s*\/\/\s*(\w+))/) {
+    $line =~ s/$1/int($2\/$3)/g;
+  }
+  #swap <> for !=
+  $line =~ s/<>/!=/g;
+  # if line starts with not, add brackting format
+  if ($line =~ /(\bnot\b\s*(.*))/) {
+    print "'$1' , '$2'\n";
+    $line = "not($2)";
+  }
+  return $line;
+}
+
 #used to handle if and while statments
 sub conditionalStatement {
   #in the format if/while(condition): optional_inline; optional_inline
   #type = while vs if
   my ($condition, $optional_inline, $type) = @_;
 
+  $condition = sanitizeOperators($condition);
   printIndentation();
   $condition = insertDollars($condition);
   print "$type ($condition) {\n";
@@ -101,7 +119,7 @@ sub printIndentation {
    }
 }
 
-sub sanitizeOperations {
+sub spaceOperators {
     my $line = $_[0];
     #provide appropriate spacing
     $line =~ s/\+/ + /g;
@@ -114,13 +132,6 @@ sub sanitizeOperations {
     $line =~ s/  */ /g;
     $line =~ s/\* \*/\*\*/g;
     $line =~ s/\/ \//\/\//g;
-    #while we have an invalid // operator, swap it
-    while ($line =~ /((\w+)\s*\/\/\s*(\w+))/) {
-      my $whole = $1; my $divisor1 = $2; my $divisor2 = $3;
-      $line =~ s/$whole/int($divisor1\/$divisor2)/g;
-    }
-    #swap <> for !=
-    $line =~ s/<>/!=/g;
     return $line;
 }
 
