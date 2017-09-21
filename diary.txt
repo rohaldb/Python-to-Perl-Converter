@@ -8,3 +8,8 @@ Start: 7pm
 Stop: 9:30pm
 Activity: variable assignment, variable printing and expression printing. Subset 1 complete
 ------------------------------------------------
+Date: 21/9
+Start: 9am
+Stop: 10:40pm
+Activity: inline while and if statements, passing subset 2.
+------------------------------------------------
