@@ -13,3 +13,8 @@ Start: 9am
 Stop: 10:40pm
 Activity: inline while and if statements, passing subset 2.
 ------------------------------------------------
+Date: 21/9
+Start: 10:40am
+Stop: 12:40pm
+Activity: accounted for operators that are valid in python but not in perl. <>, not, //
+------------------------------------------------
