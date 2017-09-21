@@ -102,9 +102,9 @@ sub printIndentation {
    }
 }
 
-#formats all operations to be space separated
 sub sanitizeOperations {
     my $line = $_[0];
+    #provide appropriate spacing
     $line =~ s/\+/ + /g;
     $line =~ s/-/ - /g;
     $line =~ s/\*/ * /g;
@@ -115,6 +115,11 @@ sub sanitizeOperations {
     $line =~ s/  */ /g;
     $line =~ s/\* \*/\*\*/g;
     $line =~ s/\/ \//\/\//g;
+    #while we have an invalid // operator, swap it
+    while ($line =~ /((\w+)\s*\/\/\s*(\w+))/) {
+      my $whole = $1; my $divisor1 = $2; my $divisor2 = $3;
+      $line =~ s/$whole/int($divisor1\/$divisor2)/g;
+    }
     return $line;
 }
 
