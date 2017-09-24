@@ -8,6 +8,9 @@ our $indentation = 0;
 
 while (my $line = <>) {
     patternMatch($line);
+    if (eof()) {
+      closeAllBrackets();
+    }
 }
 
 sub patternMatch {
@@ -20,6 +23,11 @@ sub patternMatch {
     } elsif ($line =~ /^\s*(#|$)/) {
         # Blank & comment lines can be passed unchanged
         print $line;
+    } elsif ($line =~ /^\s*import\s+sys\s*$/) {
+        return;
+    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:/) {
+        #for loop with range
+        forStatement($1,$2);
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "while");
@@ -39,6 +47,29 @@ sub patternMatch {
         printIndentation();
         print "#$line\n";
     }
+}
+
+
+sub closeAllBrackets {
+  while ($indentation) {
+    $indentation--;
+    printIndentation();
+    print "}\n";
+  }
+}
+
+sub forStatement {
+  #for range loop
+  my $var = $_[0]; my $range = $_[1];
+  push @variables, $var;
+  if ($range =~ /(\d+)\s*,\s*(\d+)/) {
+    print "foreach $var ($1..$2) {\n";
+  } elsif ($range =~ /^\s*(\d+)\s*$/) {
+    print "foreach $var (0..$1) {\n";
+  } else {
+    print "problem with range\n";
+  }
+  $indentation++;
 }
 
 sub sanitizeOperators {
