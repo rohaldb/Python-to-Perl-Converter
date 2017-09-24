@@ -48,8 +48,6 @@ sub sanitizeOperators {
     my $full = $1; my $divisor1 = $2; my $divisor2 = $3;
     $line =~ s/$full/int($divisor1\/$divisor2)/g;
   }
-  #swap <> for !=
-  $line =~ s/<>/!=/g;
   # if line starts with not, add brackting format
   if ($line =~ /(\bnot\b\s*(.*))/) {
     $line = "not($2)";
