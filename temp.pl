@@ -1,14 +1,24 @@
 #!/usr/bin/perl -w
 
-$a = 3;
-$b = 2;
-$a += $b;
-print "$a\n";
-$a = 3;
-$a **= $b;
-print "$a\n";
-$a = 3;
-$a %= $b;
-print "$a\n";
-$b //= $a;
-print "$b\n";
+sub mypush1 {
+    my ($array_ref,@elements) = @_;
+    if (@elements) {
+        @$array_ref = (@$array_ref, @elements);
+    } else {
+        @$array_ref = (@$array_ref, $_);
+    }
+}
+# same but with prototype
+sub mypush2(\@@) {
+    my ($array_ref,@elements) = @_;
+    if (@elements) {
+        @$array_ref = (@$array_ref, @elements);
+    } else {
+        @$array_ref = (@$array_ref, $_);
+    }
+}
+
+@a = (1..10);
+mypush1 \@a, 11..20;
+mypush2 @a, 21;
+print "@a\n";

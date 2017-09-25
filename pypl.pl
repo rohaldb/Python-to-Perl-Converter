@@ -4,6 +4,7 @@
 use strict;
 
 our @variables;
+our @lists;
 our $global_indentation = 0;
 
 while (my $line = <>) {
@@ -43,7 +44,7 @@ sub patternMatch {
         #for loop with range
         forRangeStatement($1,$2);
     } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+sys\.stdin\s*:\s*$/) {
-        #for loop with range
+        #for loop over stdin
         forStdinStatement($1);
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
@@ -58,17 +59,22 @@ sub patternMatch {
         #else statement to end conditional
         elseStatement();
     } elsif ($line =~ /^\s*break\s*;{0,1}\s*$/) {
-        #else statement to end conditional
+        #break statement
         breakStatement($line);
     } elsif ($line =~ /^\s*continue\s*;{0,1}\s*$/) {
-        #else statement to end conditional
+        #continue statement
         continueStatement($line);
     } elsif ($line =~ /^\s*print\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
-        #printing. 1 means new line
+        #printing. 0 means no new line
         printStatment($1,$2,0);
     } elsif ($line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
-        #printing. 0 means no new line
+        #printing. 1 means new line
         printStatment($1,$2,1);
+    } elsif ($line =~ /\s*(\w+)\.(\w+)\((.*)\)\s*;{0,1}\s*$/) {
+        # method being called on a list. can be either push or pop. Check which it is and call appropriate sub
+        my $array_ref = $1; my $method = $2; my $var = $3;
+        appendStatement($array_ref, $var) if ($method =~ /append/);
+        popStatement($array_ref, $var) if ($method =~ /pop/);
     } elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {
         #assignment of a variable
         printIndentation();
@@ -78,6 +84,36 @@ sub patternMatch {
         printIndentation();
         print "#$line\n";
     }
+}
+
+sub popStatement {
+  my ($array_ref, $var) = @_;
+  #add the list to our array of known lists (even though if we are popping, its unlikely we havent seen it before)
+  pushOnto(\@lists, $array_ref);
+  # check if we have parameters or popping final elem
+  printIndentation();
+  if ($var eq '') {
+    print "pop(\@$array_ref)\n";
+  } else {
+    print "popping '$var'\n";
+  }
+  # clean up whatever is being pushed as it could be an expression
+  $var = sanitizeOperators($var);
+  $var = insertDollars($var);
+
+}
+
+sub appendStatement {
+  my ($array_ref, $var) = @_;
+  print "'$array_ref' '$var'\n";
+  #add the list to our array of known lists
+  pushOnto(\@lists, $array_ref);
+  # clean up whatever is being pushed as it could be an expression
+  $var = sanitizeOperators($var);
+  $var = insertDollars($var);
+
+  printIndentation();
+  print "push \@$array_ref, $var\n";
 }
 
 sub elseIfStatement {
@@ -105,27 +141,27 @@ sub continueStatement {
   print "next;\n";
 }
 
-sub pushOntoVariables {
-  my $new_var = $_[0];
+sub pushOnto {
+  my ($array_ref, $new_var) = @_;
   #check if first declaration or updating
   my $exists = 0;
-  foreach my $var (@variables) {
+  foreach my $var (@$array_ref) {
     $exists = 1 if ($var eq $new_var);
   }
-  push @variables, $new_var unless ($exists);
+  push @$array_ref, $new_var unless ($exists);
 }
 
 sub forStdinStatement {
   my $var = $_[0];
-  pushOntoVariables($var);
+  pushOnto(\@variables,$var);
   $global_indentation += 1;
   print "foreach $var (<STDIN>) { \n";
 }
 
 sub forRangeStatement {
   #for range loop
-  my $var = $_[0]; my $range = $_[1];
-  pushOntoVariables($var);
+  my ($var, $range) = @_;
+  pushOnto(\@variables,$var);
   printIndentation();
   if ($range =~ /(.+)\s*,\s*(.+)/) {
     my $lower = insertDollars($1); my $upper = insertDollars($2);
@@ -209,7 +245,7 @@ sub variableAssignment {
     # if we are declaring a list, return and do nothing
     return if ($rhs =~ /^\s*\[\]\s*$/);
 
-    pushOntoVariables($lhs);
+    pushOnto(\@variables,$lhs);
     if ($rhs =~ /sys.stdin.readline\(\)/) {
       # $rhs =~ s/sys.stdin.readline\(\)/<STDIN>/;
       $rhs = "<STDIN>";
