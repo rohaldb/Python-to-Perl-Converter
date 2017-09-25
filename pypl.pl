@@ -34,9 +34,9 @@ sub patternMatch {
     } elsif ($line =~ /^\s*(#|$)/) {
         # Blank & comment lines can be passed unchanged
         print $line;
-    } elsif ($line =~ /^\s*import\s+sys\s*$/) {
+    } elsif ($line =~ /^\s*import\s+sys\s*;{0,1}$/) {
         return;
-    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:/) {
+    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:;{0,1}\s*$/) {
         #for loop with range
         forStatement($1,$2);
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
@@ -45,22 +45,22 @@ sub patternMatch {
     } elsif ($line =~ /\s*\bif\b\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "if");
-    } elsif ($line =~ /\s*elif\s*(.*?)\s*:\s*$/) {
+    } elsif ($line =~ /\s*elif\s*(.*?)\s*:\s*;{0,1}\s*$/) {
         #elseif statement
         elseIfStatement($1);
     } elsif ($line =~ /\s*else\s*:\s*$/) {
         #else statement to end conditional
         elseStatement();
-    } elsif ($line =~ /^\s*break\s*$/) {
+    } elsif ($line =~ /^\s*break\s*;{0,1}\s*$/) {
         #else statement to end conditional
         breakStatement($line);
-    } elsif ($line =~ /^\s*print\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*$/) {
+    } elsif ($line =~ /^\s*print\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
         #printing. 1 means new line
         printStatment($1,$2,0);
-    } elsif ($line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*$/) {
+    } elsif ($line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
         #printing. 0 means no new line
         printStatment($1,$2,1);
-    } elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=)\s*(.*)/) {
+    } elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=)\s*(.*?);{0,1}\s*$/) {
         #assignment of a variable
         printIndentation();
         variableAssignment($1,$2,$3);
