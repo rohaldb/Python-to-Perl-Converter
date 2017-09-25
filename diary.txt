@@ -28,3 +28,13 @@ Start: 9:00am
 Stop: 11:30am
 Activity: STD in and out finished. fixed range bug of upper bound. handled int appropriately. fixed bug where pushing to variables array wasnt working propperly
 ------------------------------------------------
+Date: 24/9
+Start: 11:30am
+Stop: 1pm
+Activity: Wrote tests for subsets 1-3
+------------------------------------------------
+Date: 24/9
+Start: 2pm
+Stop: 4pm
+Activity: Bug fixes. Included //=, **= and %=. Finished subset 3
+------------------------------------------------
