@@ -22,8 +22,8 @@ Stop: 12:40pm
 Activity: Debugging
 Comments: accounted for operators that are valid in python but not in perl. <>, not, //
 ------------------------------------------------
-Date: 24/9
-Start: 12:00
+Date: 22/9
+Start: 12:00pm
 Stop: 3:30pm
 Activity: coding
 Comments: began subset 3. multi line if and while statemnets done
@@ -47,12 +47,8 @@ Activity: Debugging
 Comments: Bug fixes. Included //=, **= and %=. Finished subset 3
 ------------------------------------------------
 Date: 24/9
-Start: 11:30am
-Stop: 1pm
-Activity: Wrote tests for subsets 1-3
-------------------------------------------------
-Date: 24/9
-Start: 2pm
-Stop: 4pm
-Activity: Bug fixes. Included //=, **= and %=. Finished subset 3
+Start: 4:30pm
+Stop: 7pm
+Activity: Coding
+Comments: Began subset 4. Have append and pop working. Can now also print arrays propperly with $ and @.
 ------------------------------------------------
