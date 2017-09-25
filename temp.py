@@ -1,14 +1,11 @@
 #!/usr/local/bin/python3
+import sys
 
-a=3
-b=2
-a += b
-print(a)
-a=3
-a **= b
-print(a)
-a=3
-a %= b
-print(a)
-b //= a
-print(b)
+lines = []
+for line in sys.stdin:
+    lines.append(line)
+
+i = len(lines) - 1
+while i >= 0:
+    print(lines[i], end='')
+    i = i - 1

@@ -39,9 +39,12 @@ sub patternMatch {
         print $line;
     } elsif ($line =~ /^\s*import\s+sys\s*;{0,1}$/) {
         return;
-    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:;{0,1}\s*$/) {
+    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:\s*$/) {
         #for loop with range
-        forStatement($1,$2);
+        forRangeStatement($1,$2);
+    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+sys\.stdin\s*:\s*$/) {
+        #for loop with range
+        forStdinStatement($1);
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "while");
@@ -112,7 +115,14 @@ sub pushOntoVariables {
   push @variables, $new_var unless ($exists);
 }
 
-sub forStatement {
+sub forStdinStatement {
+  my $var = $_[0];
+  pushOntoVariables($var);
+  $global_indentation += 1;
+  print "foreach $var (<STDIN>) { \n";
+}
+
+sub forRangeStatement {
   #for range loop
   my $var = $_[0]; my $range = $_[1];
   pushOntoVariables($var);
@@ -124,6 +134,7 @@ sub forStatement {
     my $upper = insertDollars($1);
     print "foreach \$$var (0..$upper - 1) {\n";
   } else {
+    #purely for debugging
     print "problem with range\n";
   }
   $global_indentation++;
@@ -194,6 +205,10 @@ sub printStatment {
 
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
+
+    # if we are declaring a list, return and do nothing
+    return if ($rhs =~ /^\s*\[\]\s*$/);
+
     pushOntoVariables($lhs);
     if ($rhs =~ /sys.stdin.readline\(\)/) {
       # $rhs =~ s/sys.stdin.readline\(\)/<STDIN>/;
