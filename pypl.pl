@@ -16,6 +16,12 @@ while (my $line = <>) {
   patternMatch($line);
   # close all unclosed brackets if end of file
   closeAllBrackets(0) if (eof || eof());
+  # printVariables();
+}
+
+sub printVariables {
+  my $temp = join ',', @variables;
+  print "variables: $temp\n";
 }
 
 sub patternMatch {
@@ -84,14 +90,26 @@ sub breakStatement {
   print "last;\n";
 }
 
+sub pushOntoVariables {
+  my $new_var = $_[0];
+  #check if first declaration or updating
+  my $exists = 0;
+  foreach my $var (@variables) {
+    $exists = 1 if ($var eq $new_var);
+  }
+  push @variables, $new_var unless ($exists);
+}
+
 sub forStatement {
   #for range loop
   my $var = $_[0]; my $range = $_[1];
-  push @variables, $var;
-  if ($range =~ /(\d+)\s*,\s*(\d+)/) {
-    print "foreach $var ($1..$2) {\n";
+  pushOntoVariables($var);
+  if ($range =~ /(.+)\s*,\s*(.+)/) {
+    my $lower = insertDollars($1); my $upper = insertDollars($2);
+    print "foreach \$$var ($lower..$upper - 1) {\n";
   } elsif ($range =~ /^\s*(\d+)\s*$/) {
-    print "foreach $var (0..$1) {\n";
+    my $upper = insertDollars($1);
+    print "foreach \$$var (0..$upper - 1) {\n";
   } else {
     print "problem with range\n";
   }
@@ -163,14 +181,10 @@ sub printStatment {
 
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
-    #check if first declaration or updating
-    my $exists = 0;
-    foreach my $var (@variables) {
-      $exists = 1 if ($var eq $lhs);
-    }
-    push @variables, $lhs unless ($exists);
+    pushOntoVariables($lhs);
     if ($rhs =~ /sys.stdin.readline\(\)/) {
-      $rhs =~ s/sys.stdin.readline\(\)/<STDIN>/;
+      # $rhs =~ s/sys.stdin.readline\(\)/<STDIN>/;
+      $rhs = "<STDIN>";
     }
     $rhs = insertDollars($rhs);
     print "\$$lhs $operator $rhs;\n";

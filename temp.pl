@@ -1,4 +1,3 @@
 #!/usr/bin/perl -w
-
-$x = int(9/4);
-print "$x\n";
+$count = 0;
+print 9/2, "\n";
