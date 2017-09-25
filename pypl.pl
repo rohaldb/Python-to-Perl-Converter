@@ -66,7 +66,7 @@ sub patternMatch {
     } elsif ($line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
         #printing. 0 means no new line
         printStatment($1,$2,1);
-    } elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=)\s*(.*?);{0,1}\s*$/) {
+    } elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {
         #assignment of a variable
         printIndentation();
         variableAssignment($1,$2,$3);
