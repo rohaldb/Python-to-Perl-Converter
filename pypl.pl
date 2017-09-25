@@ -18,23 +18,6 @@ while (my $line = <>) {
   closeAllBrackets(0) if (eof || eof());
 }
 
-sub countIndentations {
-  # my $temp_line = $_[0];
-  # $temp_line =~ /^(\s*).*/;
-  # my $local_indentation = length($1)/4;
-  # print "$local_indentation , $global_indentation ??\n";
-  # if ($local_indentation < $global_indentation || eof()) {
-  #   print "entered here\n";
-  #   closeAllBrackets($local_indentation);
-  # }
-  # print "ben\n";
-  # my $count = $_[0] =~ tr/ //;
-  # print "count = $count\n";
-  # $count /= 4;
-  # print "new count = $count\n";
-  # return $count;
-}
-
 sub patternMatch {
     my $line = $_[0];
     #$line = spaceOperators($line);
@@ -53,12 +36,24 @@ sub patternMatch {
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "while");
-    } elsif ($line =~ /\s*if\s*(.*?)\s*:\s*(.*)/) {
+    } elsif ($line =~ /\s*\bif\b\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "if");
-    } elsif ($line =~ /^\s*print\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)/ || $line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)/) {
-        #printing
-        printStatment($1,$2);
+    } elsif ($line =~ /\s*elif\s*(.*?)\s*:\s*$/) {
+        #elseif statement
+        elseIfStatement($1);
+    } elsif ($line =~ /\s*else\s*:\s*$/) {
+        #else statement to end conditional
+        elseStatement();
+    } elsif ($line =~ /^\s*break\s*$/) {
+        #else statement to end conditional
+        breakStatement($line);
+    } elsif ($line =~ /^\s*print\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*$/) {
+        #printing. 1 means new line
+        printStatment($1,$2,0);
+    } elsif ($line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*$/) {
+        #printing. 0 means no new line
+        printStatment($1,$2,1);
     } elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=)\s*(.*)/) {
         #assignment of a variable
         printIndentation();
@@ -68,6 +63,25 @@ sub patternMatch {
         printIndentation();
         print "#$line\n";
     }
+}
+
+sub elseIfStatement {
+  my $condition = insertDollars($_[0]);
+  printIndentation();
+  print "elsif ($condition) { \n";
+  $global_indentation++;
+}
+
+sub elseStatement {
+  printIndentation();
+  print "else { \n";
+  $global_indentation++;
+}
+
+sub breakStatement {
+  my $line = $_[0];
+  printIndentation();
+  print "last;\n";
 }
 
 sub forStatement {
@@ -125,21 +139,24 @@ sub conditionalStatement {
 }
 
 sub printStatment {
-    my ($quotation,$print_content) = @_;
+    my ($quotation,$print_content,$new_line) = @_;
     printIndentation();
     if ($quotation) {
         # printing a string
-        print "print \"$print_content\\n\";\n";
+        print "print \"$print_content\\n\";\n" unless $new_line;
+        print "print \"$print_content\";\n" if $new_line;
     } else {
         #print contains variables
         my $print_content = insertDollars($print_content);
 
         if ($print_content =~ /\+|-|\*|\/|%/){
             #printing an expression
-            print "print $print_content, \"\\n\";\n";
+            print "print $print_content, \"\\n\";\n" unless $new_line;
+            print "print $print_content;\n" if $new_line;
         } else {
             #printing a variable
-            print "print \"$print_content\\n\";\n";
+            print "print \"$print_content\\n\";\n" unless $new_line;
+            print "print \"$print_content\";\n" if $new_line;
         }
     }
 }
@@ -152,7 +169,9 @@ sub variableAssignment {
       $exists = 1 if ($var eq $lhs);
     }
     push @variables, $lhs unless ($exists);
-    if ($rhs =~ /sys.stdin.readline\(\)/) {$rhs = "<STDIN>\n";}
+    if ($rhs =~ /sys.stdin.readline\(\)/) {
+      $rhs =~ s/sys.stdin.readline\(\)/<STDIN>/;
+    }
     $rhs = insertDollars($rhs);
     print "\$$lhs $operator $rhs;\n";
 }
