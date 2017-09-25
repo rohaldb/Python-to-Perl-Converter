@@ -93,9 +93,9 @@ sub popStatement {
   # check if we have parameters or popping final elem
   printIndentation();
   if ($var eq '') {
-    print "pop(\@$array_ref)\n";
+    print "pop(\@$array_ref);\n";
   } else {
-    print "popping '$var'\n";
+    print "splice \@$array_ref, $var, 1;\n";
   }
   # clean up whatever is being pushed as it could be an expression
   $var = sanitizeOperators($var);
@@ -105,7 +105,6 @@ sub popStatement {
 
 sub appendStatement {
   my ($array_ref, $var) = @_;
-  print "'$array_ref' '$var'\n";
   #add the list to our array of known lists
   pushOnto(\@lists, $array_ref);
   # clean up whatever is being pushed as it could be an expression
@@ -113,7 +112,7 @@ sub appendStatement {
   $var = insertDollars($var);
 
   printIndentation();
-  print "push \@$array_ref, $var\n";
+  print "push \@$array_ref, $var;\n";
 }
 
 sub elseIfStatement {
