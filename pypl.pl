@@ -258,11 +258,16 @@ sub variableAssignment {
 # inserts $before known variables in a string param
 sub prefixVariables {
     my $str = $_[0];
-    foreach my $var (our @variables) {
-        $str =~ s/\b$var\b/\$$var/g;
+    # prefix scalars with $
+    foreach my $var (@variables) {
+      $str =~ s/\b$var\b/\$$var/g;
     }
-    foreach my $var (our @lists) {
+    # prefix indexed arrays with either $/@
+    foreach my $var (@lists) {
+      # if the sed for a $ doesnt match, must be @
+      if (not($str =~ s/\b$var\[/\$$var\[/g)) {
         $str =~ s/\b$var\b/\@$var/g;
+      }
     }
     return $str;
 }
