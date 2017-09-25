@@ -186,6 +186,7 @@ sub variableAssignment {
       # $rhs =~ s/sys.stdin.readline\(\)/<STDIN>/;
       $rhs = "<STDIN>";
     }
+    $rhs = sanitizeOperators($rhs);
     $rhs = insertDollars($rhs);
     print "\$$lhs $operator $rhs;\n";
 }
