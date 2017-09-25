@@ -18,3 +18,13 @@ Start: 10:40am
 Stop: 12:40pm
 Activity: accounted for operators that are valid in python but not in perl. <>, not, //
 ------------------------------------------------
+Date: 24/9
+Start: 12:00
+Stop: 3:30pm
+Activity: began subset 3. multi line if and while statemnets done
+------------------------------------------------
+Date: 24/9
+Start: 9:00am
+Stop: 11:30am
+Activity: STD in and out finished. fixed range bug of upper bound. handled int appropriately. fixed bug where pushing to variables array wasnt working propperly
+------------------------------------------------
