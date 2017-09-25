@@ -16,3 +16,12 @@ if (x % k == 1) : print("6"); tot += 1
 if (x ** k == 25) : print("7"); tot += 1
 
 if not tot ==  7 : print  ("error encountered")
+
+x*=16
+x/=8
+x-=6
+x+=2
+
+x += 12//7
+print(x);
+print("above should be 7.0");

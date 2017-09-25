@@ -10,6 +10,9 @@ while (my $line = <>) {
   my $temp_line = $line;
   $temp_line =~ /^(\s*).*/;
   my $local_indentation = length($1)/4;
+  # if we have an empty line, dont close all brackets
+  $local_indentation = $global_indentation if ($line eq "\n");
+  # print "the indentation of $line is $local_indentation\n";
   if ($local_indentation < $global_indentation) {
     closeAllBrackets($local_indentation);
   }
@@ -54,6 +57,9 @@ sub patternMatch {
     } elsif ($line =~ /^\s*break\s*;{0,1}\s*$/) {
         #else statement to end conditional
         breakStatement($line);
+    } elsif ($line =~ /^\s*continue\s*;{0,1}\s*$/) {
+        #else statement to end conditional
+        continueStatement($line);
     } elsif ($line =~ /^\s*print\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
         #printing. 1 means new line
         printStatment($1,$2,0);
@@ -90,6 +96,12 @@ sub breakStatement {
   print "last;\n";
 }
 
+sub continueStatement {
+  my $line = $_[0];
+  printIndentation();
+  print "next;\n";
+}
+
 sub pushOntoVariables {
   my $new_var = $_[0];
   #check if first declaration or updating
@@ -104,6 +116,7 @@ sub forStatement {
   #for range loop
   my $var = $_[0]; my $range = $_[1];
   pushOntoVariables($var);
+  printIndentation();
   if ($range =~ /(.+)\s*,\s*(.+)/) {
     my $lower = insertDollars($1); my $upper = insertDollars($2);
     print "foreach \$$var ($lower..$upper - 1) {\n";
