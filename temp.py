@@ -1,11 +1,11 @@
 #!/usr/local/bin/python3
+import sys
 
-a = [];
+lines = []
+for line in sys.stdin:
+    lines.append(line)
 
-a.append(1)
-a.append( 2 )
-a.append(3)
-a.append(4)
-a.pop()
-a.pop(0)
-print(a)
+i = len(lines) - 1
+while i >= 0:
+    print(lines[i], end='')
+    i = i - 1

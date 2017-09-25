@@ -20,13 +20,12 @@ while (my $line = <>) {
   patternMatch($line);
   # close all unclosed brackets if end of file
   closeAllBrackets(0) if (eof || eof());
-  # printVariables();
 }
 
-sub printVariables {
-  my $temp = join ',', @variables;
-  print "variables: $temp\n";
-}
+# sub printVariables {
+#   my $temp = join ',', @variables;
+#   print "variables: $temp\n";
+# }
 
 sub patternMatch {
     my $line = $_[0];
@@ -95,12 +94,11 @@ sub popStatement {
   if ($var eq '') {
     print "pop(\@$array_ref);\n";
   } else {
+    # clean up whatever is being pushed as it could be an expression
+    $var = sanitizeOperators($var);
+    $var = prefixVariables($var);
     print "splice \@$array_ref, $var, 1;\n";
   }
-  # clean up whatever is being pushed as it could be an expression
-  $var = sanitizeOperators($var);
-  $var = insertDollars($var);
-
 }
 
 sub appendStatement {
@@ -109,14 +107,14 @@ sub appendStatement {
   pushOnto(\@lists, $array_ref);
   # clean up whatever is being pushed as it could be an expression
   $var = sanitizeOperators($var);
-  $var = insertDollars($var);
+  $var = prefixVariables($var);
 
   printIndentation();
   print "push \@$array_ref, $var;\n";
 }
 
 sub elseIfStatement {
-  my $condition = insertDollars($_[0]);
+  my $condition = prefixVariables($_[0]);
   printIndentation();
   print "elsif ($condition) { \n";
   $global_indentation++;
@@ -163,10 +161,10 @@ sub forRangeStatement {
   pushOnto(\@variables,$var);
   printIndentation();
   if ($range =~ /(.+)\s*,\s*(.+)/) {
-    my $lower = insertDollars($1); my $upper = insertDollars($2);
+    my $lower = prefixVariables($1); my $upper = prefixVariables($2);
     print "foreach \$$var ($lower..$upper - 1) {\n";
   } elsif ($range =~ /^\s*(\d+)\s*$/) {
-    my $upper = insertDollars($1);
+    my $upper = prefixVariables($1);
     print "foreach \$$var (0..$upper - 1) {\n";
   } else {
     #purely for debugging
@@ -197,13 +195,13 @@ sub conditionalStatement {
 
   $condition = sanitizeOperators($condition);
   printIndentation();
-  $condition = insertDollars($condition);
+  $condition = prefixVariables($condition);
   print "$type ($condition) {\n";
   $global_indentation++;
 
   if (!$optional_inline) {
     #just a if/while statement
-    $condition = insertDollars($condition);
+    $condition = prefixVariables($condition);
   } else {
     #may have multiple inline statements, split them up and handle each appropriately
     my @statements = split '\s*;\s*', $optional_inline;
@@ -224,7 +222,7 @@ sub printStatment {
         print "print \"$print_content\";\n" if $new_line;
     } else {
         #print contains variables
-        my $print_content = insertDollars($print_content);
+        my $print_content = prefixVariables($print_content);
 
         if ($print_content =~ /\+|-|\*|\/|%/){
             #printing an expression
@@ -241,8 +239,11 @@ sub printStatment {
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
 
-    # if we are declaring a list, return and do nothing
-    return if ($rhs =~ /^\s*\[\]\s*$/);
+    # if we are declaring a list, append to known lists and return
+    if ($rhs =~ /^\s*\[\]\s*$/) {
+      pushOnto(\@lists, $lhs);
+      return;
+    }
 
     pushOnto(\@variables,$lhs);
     if ($rhs =~ /sys.stdin.readline\(\)/) {
@@ -250,15 +251,18 @@ sub variableAssignment {
       $rhs = "<STDIN>";
     }
     $rhs = sanitizeOperators($rhs);
-    $rhs = insertDollars($rhs);
+    $rhs = prefixVariables($rhs);
     print "\$$lhs $operator $rhs;\n";
 }
 
 # inserts $before known variables in a string param
-sub insertDollars {
+sub prefixVariables {
     my $str = $_[0];
     foreach my $var (our @variables) {
         $str =~ s/\b$var\b/\$$var/g;
+    }
+    foreach my $var (our @lists) {
+        $str =~ s/\b$var\b/\@$var/g;
     }
     return $str;
 }
@@ -278,22 +282,22 @@ sub closeAllBrackets {
   }
 }
 
-sub spaceOperators {
-    my $line = $_[0];
-    #provide appropriate spacing
-    $line =~ s/\+/ + /g;
-    $line =~ s/-/ - /g;
-    $line =~ s/\*/ * /g;
-    $line =~ s/\// \/ /g;
-    $line =~ s/\/\// \/\/ /g;
-    $line =~ s/\* \*/ \*\* /g;
-    $line =~ s/%/ % /g;
-    $line =~ s/  */ /g;
-    $line =~ s/\* \*/\*\*/g;
-    $line =~ s/\/ \//\/\//g;
-    $line =~ s/\+ =/\+=/g;
-    $line =~ s/- =/-=/g;
-    $line =~ s/\* =/\*=/g;
-    $line =~ s/\/ =/\/=/g;
-    return $line;
-}
+# sub spaceOperators {
+#     my $line = $_[0];
+#     #provide appropriate spacing
+#     $line =~ s/\+/ + /g;
+#     $line =~ s/-/ - /g;
+#     $line =~ s/\*/ * /g;
+#     $line =~ s/\// \/ /g;
+#     $line =~ s/\/\// \/\/ /g;
+#     $line =~ s/\* \*/ \*\* /g;
+#     $line =~ s/%/ % /g;
+#     $line =~ s/  */ /g;
+#     $line =~ s/\* \*/\*\*/g;
+#     $line =~ s/\/ \//\/\//g;
+#     $line =~ s/\+ =/\+=/g;
+#     $line =~ s/- =/-=/g;
+#     $line =~ s/\* =/\*=/g;
+#     $line =~ s/\/ =/\/=/g;
+#     return $line;
+# }
