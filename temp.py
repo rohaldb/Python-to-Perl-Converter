@@ -1,11 +1,10 @@
 #!/usr/local/bin/python3
-import sys
 
-lines = []
-for line in sys.stdin:
-    lines.append(line)
+dict = {'Name': 'Zara', 'Age': 7, 'Class': 'First'}
 
-i = len(lines) - 1
-while i >= 0:
-    print(lines[i])
-    i = i - 1
+dict['Age'] = 8; # update existing entry
+dict['School'] = "DPS School"; # Add new entry
+
+x = dict['Age']
+print(dict['Name'])
+print(x)

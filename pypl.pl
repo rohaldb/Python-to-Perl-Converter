@@ -5,6 +5,7 @@ use strict;
 
 our @variables;
 our @lists;
+our @dicts;
 our $global_indentation = 0;
 
 while (my $line = <>) {
@@ -65,7 +66,7 @@ sub patternMatch {
     } elsif ($line =~ /^\s*sys.stdout.write\s*\((.*?)\)\s*;{0,1}\s*$/) {
         #printing. 1 means called from sys.stdout
         printStatment($1, 1);
-    }  elsif ($line =~ /^\s*(\w+(?:\[\d+\]){0,1})\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {
+    }  elsif ($line =~ /^\s*(\w+(?:\[['"]{0,1}\w+['"]{0,1}\]){0,1})\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {
         #assignment of a variable
         printIndentation();
         variableAssignment($1,$2,$3);
@@ -338,15 +339,25 @@ sub variableAssignment {
       return;
     }
 
-    # if we are declaring a list by providing elements eg [1,2,3]
-    if ($rhs =~ /^\s*\[(.*)\]\s*$/) {
+    # declaring a hash
+    if ($rhs =~ /^\s*\{(.*)\}\s*$/) {
+      # store the dict
+      pushOnto(\@dicts, $lhs);
+      # change inner and outer braces
+      $rhs =~ s/^\s*\{/\(/;$rhs =~ s/\}\s*$/\)/;
+      # replace colons with commas
+      $rhs =~ tr/:/,/;
+      print "%$lhs $operator $rhs\n";
+    } elsif ($rhs =~ /^\s*\[(.*)\]\s*$/) {
+      # if we are declaring a list by providing elements eg [1,2,3]
+      # dont print declaration of empty list
       return unless $1;
       # store the list
       pushOnto(\@lists, $lhs);
-      $rhs =~ tr/\[/\(/; $rhs =~ tr/\]/\)/;
+      $rhs =~ s/^\s*\[/\(/;$rhs =~ s/\]\s*$/\)/;
       print "\@$lhs $operator $rhs;\n";
     } elsif ($rhs =~ /sort\(/) {
-      # we are declaring an array since rhs returns array
+      # we are declaring a list since rhs returns array
       pushOnto(\@lists, $lhs);
       print "\@$lhs $operator $rhs;\n";
     } else {
