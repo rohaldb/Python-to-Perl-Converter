@@ -70,7 +70,6 @@ sub patternMatch {
         printIndentation();
         variableAssignment($1,$2,$3);
     } elsif ($line =~ /\s*(\w+)\.(\w+)\((.*)\)\s*;{0,1}\s*$/) {
-        print "ben!!]\n";
         # method being called on a list. can be either push or pop. Check which it is and call appropriate sub
         my $array_ref = $1; my $method = $2; my $var = $3;
         appendStatement($array_ref, $var) if ($method =~ /append/);
@@ -253,20 +252,24 @@ sub printStatment {
 
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
-    # if we are declaring a list, append to known lists and return
-    if ($rhs =~ /^\s*\[\]\s*$/) {
-      pushOnto(\@lists, $lhs);
-      return;
-    }
-    # add the variable to our list of variables
-    pushOnto(\@variables,$lhs);
-    # if stdin, replace rhs with <STDIN>
-    if ($rhs =~ /sys.stdin.readline\(\)/) {
-      $rhs = "<STDIN>";
-    }
-    # clean up and print
     $rhs = sanitizeExpression($rhs);
-    print "\$$lhs $operator $rhs;\n";
+    # if we are declaring a list
+    if ($rhs =~ /^\s*\[(.*)\]\s*$/) {
+      return unless $1;
+      # store the list
+      pushOnto(\@lists, $lhs);
+      $rhs =~ tr/\[/\(/; $rhs =~ tr/\]/\)/;
+      print "\@$lhs $operator $rhs;\n";
+    } else {
+      # we are declaring a variable
+      # add the variable to our list of variables
+      pushOnto(\@variables,$lhs);
+      # if stdin, replace rhs with <STDIN>
+      if ($rhs =~ /sys.stdin.readline\(\)/) {
+        $rhs = "<STDIN>";
+      }
+      print "\$$lhs $operator $rhs;\n";
+    }
 }
 
 # inserts appropriate prefix before known variables in an expression
