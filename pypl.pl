@@ -35,9 +35,9 @@ sub patternMatch {
         print $line;
     } elsif ($line =~ /^\s*import\s+sys\s*;{0,1}$/) {
         return;
-    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:\s*$/) {
+    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:\s*(.*)$/) {
         #for loop with range
-        forRangeStatement($1,$2);
+        forRangeStatement($1,$2,$3);
     } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+sys\.stdin\s*:\s*$/) {
         #for loop over stdin
         forStdinStatement($1);
@@ -170,9 +170,25 @@ sub forStdinStatement {
   print "foreach \$$var (<STDIN>) { \n";
 }
 
+sub handleOptionalInline {
+  my $optional_inline = $_[0];
+  # if we have an inline statement such as if(condition):statement; statement;...
+  if ($optional_inline) {
+    #split them up and handle each appropriately
+    my @statements = split '\s*;\s*', $optional_inline;
+    foreach my $statement (@statements) {
+        patternMatch($statement);
+    }
+    $global_indentation--;
+    # end by closing the parenthesis
+    printIndentation();
+    print "}\n";
+  }
+}
+
 sub forRangeStatement {
   #for range loop
-  my ($var, $range) = @_;
+  my ($var, $range, $optional_inline) = @_;
   # store the variable
   pushOnto(\@variables,$var);
   printIndentation();
@@ -186,11 +202,9 @@ sub forRangeStatement {
     # bound can be expression, evaluate it and print
     my $upper = sanitizeExpression($1);
     print "foreach \$$var (0..$upper - 1) {\n";
-  } else {
-    #purely for debugging
-    print "problem with range\n";
   }
   $global_indentation++;
+  handleOptionalInline($optional_inline);
 }
 
 # applied to an expression. replaces a//b with int(a/b)
@@ -221,18 +235,7 @@ sub conditionalStatement {
   print "$type ($condition) {\n";
   $global_indentation++;
 
-  # if we have an inline statement such as if(condition):statement; statement;...
-  if ($optional_inline) {
-    #split them up and handle each appropriately
-    my @statements = split '\s*;\s*', $optional_inline;
-    foreach my $statement (@statements) {
-        patternMatch($statement);
-    }
-    $global_indentation--;
-    # end by closing the parenthesis
-    printIndentation();
-    print "}\n";
-  }
+  handleOptionalInline($optional_inline);
 }
 
 # prints any expression
@@ -259,9 +262,20 @@ sub printStatment {
     }
 }
 
+sub readLinesStatement {
+  my $str1 = "for line in sys.stdin:";
+}
+
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
     $rhs = sanitizeExpression($rhs);
+
+    # if we are assigning to sys.stdin.readlines()
+    if ($rhs =~ /sys.stdin.readlines()/){
+      readLinesStatement();
+      return;
+    }
+
     # if we are declaring a list
     if ($rhs =~ /^\s*\[(.*)\]\s*$/) {
       return unless $1;
