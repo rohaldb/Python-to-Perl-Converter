@@ -12,7 +12,7 @@ while (my $line = <>) {
   $temp_line =~ /^(\s*).*/;
   my $local_indentation = length($1)/4;
   # if we have an empty line, dont close all brackets
-  $local_indentation = $global_indentation if ($line eq "\n");
+  $local_indentation = 0 if ($line =~ /^\s*$/);
   # print "the indentation of $line is $local_indentation\n";
   if ($local_indentation < $global_indentation) {
     closeAllBrackets($local_indentation);
@@ -45,7 +45,7 @@ sub patternMatch {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "while");
     } elsif ($line =~ /\s*\bif\b\s*(.*?)\s*:\s*(.*)/) {
-        #while statement, be it inline or multiline
+        #if statement, be it inline or multiline
         conditionalStatement($1,$2, "if");
     } elsif ($line =~ /\s*elif\s*(.*?)\s*:\s*;{0,1}\s*$/) {
         #elseif statement
@@ -158,7 +158,7 @@ sub forStdinStatement {
   # store the variable
   pushOnto(\@variables,$var);
   $global_indentation += 1;
-  print "foreach $var (<STDIN>) { \n";
+  print "foreach \$$var (<STDIN>) { \n";
 }
 
 sub forRangeStatement {
