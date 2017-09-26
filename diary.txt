@@ -52,3 +52,9 @@ Stop: 7pm
 Activity: Coding
 Comments: Began subset 4. Have append and pop working. Can now also print arrays propperly with $ and @.
 ------------------------------------------------
+Date: 26/9
+Start: 10:30pm
+Stop: 12:30pm
+Activity: Coding and clean up
+Comments: Cleaned up a lot of code. Refactored some parts, commented others. Afterward sorted out list declaration woth elements in it, which i forgot
+------------------------------------------------
