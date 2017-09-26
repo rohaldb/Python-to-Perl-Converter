@@ -22,11 +22,6 @@ while (my $line = <>) {
   closeAllBrackets(0) if (eof || eof());
 }
 
-# sub printVariables {
-#   my $temp = join ',', @variables;
-#   print "variables: $temp\n";
-# }
-
 # given the current line, matches the line with a method to handle it
 sub patternMatch {
     my $line = $_[0];
@@ -87,6 +82,17 @@ sub patternMatch {
     }
 }
 
+# given a python expression, sanitizes it in a range of ways
+sub sanitizeExpression {
+  my $expr = $_[0];
+  # 1. replaces invalid operators with valid ones
+  $expr = sanitizeOperators($expr);
+  # 2. replaces variables and lists with prefixes
+  $expr = prefixVariables($expr);
+  # 3. replaces method definitions with appropriate syntax
+  return $expr;
+}
+
 sub popStatement {
   my ($array_ref, $var) = @_;
   #add the list to our array of known lists (even though if we are popping, its likely we've seen it before)
@@ -97,8 +103,7 @@ sub popStatement {
     print "pop(\@$array_ref);\n";
   } else {
     # clean up whatever is being pushed as it could be an expression
-    $var = sanitizeOperators($var);
-    $var = prefixVariables($var);
+    $var = sanitizeExpression($var);
     print "splice \@$array_ref, $var, 1;\n";
   }
 }
@@ -108,15 +113,13 @@ sub appendStatement {
   #add the list to our array of known lists
   pushOnto(\@lists, $array_ref);
   # clean up whatever is being pushed as it could be an expression
-  $var = sanitizeOperators($var);
-  $var = prefixVariables($var);
-
+  $var = sanitizeExpression($var);
   printIndentation();
   print "push \@$array_ref, $var;\n";
 }
 
 sub elseIfStatement {
-  my $condition = prefixVariables($_[0]);
+  my $condition = sanitizeExpression($_[0]);
   printIndentation();
   print "elsif ($condition) { \n";
   $global_indentation++;
@@ -168,12 +171,12 @@ sub forRangeStatement {
   # check whether it is a range(x) or a range(x, y)
   if ($range =~ /(.+)\s*,\s*(.+)/) {
     # bounds can be expressions, evaluate and print
-    my $lower = prefixVariables($1);
-    my $upper = prefixVariables($2);
+    my $lower = sanitizeExpression($1);
+    my $upper = sanitizeExpression($2);
     print "foreach \$$var ($lower..$upper - 1) {\n";
   } elsif ($range =~ /^\s*(\d+)\s*$/) {
     # bound can be expression, evaluate it and print
-    my $upper = prefixVariables($1);
+    my $upper = sanitizeExpression($1);
     print "foreach \$$var (0..$upper - 1) {\n";
   } else {
     #purely for debugging
@@ -205,8 +208,7 @@ sub conditionalStatement {
 
   printIndentation();
 
-  $condition = sanitizeOperators($condition);
-  $condition = prefixVariables($condition);
+  $condition = sanitizeExpression($condition);
   # print if (condition) or while(condition)
   print "$type ($condition) {\n";
   $global_indentation++;
@@ -243,8 +245,7 @@ sub printStatment {
         print "print \"$print_content\";\n" if $new_line;
     } else {
         #printing expression, clean it up and print
-        $print_content = prefixVariables($print_content);
-        $print_content = sanitizeOperators($print_content);
+        $print_content = sanitizeExpression($print_content);
         print "print($print_content, \"\\n\");\n" unless $new_line;
         print "print($print_content);\n" if $new_line;
     }
@@ -264,8 +265,7 @@ sub variableAssignment {
       $rhs = "<STDIN>";
     }
     # clean up and print
-    $rhs = sanitizeOperators($rhs);
-    $rhs = prefixVariables($rhs);
+    $rhs = sanitizeExpression($rhs);
     print "\$$lhs $operator $rhs;\n";
 }
 
