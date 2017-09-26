@@ -38,9 +38,9 @@ sub patternMatch {
     } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:\s*(.*)$/) {
         #for loop with range
         forRangeStatement($1,$2,$3);
-    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+sys\.stdin\s*:\s*$/) {
+    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+sys\.stdin\s*:\s*(.*)$/) {
         #for loop over stdin
-        forStdinStatement($1);
+        forStdinStatement($1,$2);
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "while");
@@ -163,11 +163,12 @@ sub pushOnto {
 }
 
 sub forStdinStatement {
-  my $var = $_[0];
+  my ($var, $optional_inline) = @_;
   # store the variable
   pushOnto(\@variables,$var);
   $global_indentation += 1;
   print "foreach \$$var (<STDIN>) { \n";
+  handleOptionalInline($optional_inline);
 }
 
 sub handleOptionalInline {
@@ -262,8 +263,11 @@ sub printStatment {
     }
 }
 
+# converts param = sys.stdin.readlines() to a while loop
 sub readLinesStatement {
-  my $str1 = "for line in sys.stdin:";
+  my $variable = $_[0];
+  #pass back into pattern match a python string that will be converted to an equivalent statement with a  loop
+  patternMatch("for line in sys.stdin: $variable.append(line)");
 }
 
 sub variableAssignment {
@@ -272,7 +276,7 @@ sub variableAssignment {
 
     # if we are assigning to sys.stdin.readlines()
     if ($rhs =~ /sys.stdin.readlines()/){
-      readLinesStatement();
+      readLinesStatement($lhs);
       return;
     }
 
