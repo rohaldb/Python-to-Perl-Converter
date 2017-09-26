@@ -75,6 +75,7 @@ sub patternMatch {
         printIndentation();
         variableAssignment($1,$2,$3);
     } elsif ($line =~ /\s*(\w+)\.(\w+)\((.*)\)\s*;{0,1}\s*$/) {
+        print "ben!!]\n";
         # method being called on a list. can be either push or pop. Check which it is and call appropriate sub
         my $array_ref = $1; my $method = $2; my $var = $3;
         appendStatement($array_ref, $var) if ($method =~ /append/);
