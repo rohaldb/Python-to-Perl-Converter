@@ -27,6 +27,7 @@ while (my $line = <>) {
 #   print "variables: $temp\n";
 # }
 
+# given the current line, matches the line with a method to handle it
 sub patternMatch {
     my $line = $_[0];
     #$line = spaceOperators($line);
@@ -87,10 +88,10 @@ sub patternMatch {
 
 sub popStatement {
   my ($array_ref, $var) = @_;
-  #add the list to our array of known lists (even though if we are popping, its unlikely we havent seen it before)
+  #add the list to our array of known lists (even though if we are popping, its likely we've seen it before)
   pushOnto(\@lists, $array_ref);
-  # check if we have parameters or popping final elem
   printIndentation();
+  # check if we have a variable indicating index eg. pop(x) or popping final elem
   if ($var eq '') {
     print "pop(\@$array_ref);\n";
   } else {
@@ -138,9 +139,10 @@ sub continueStatement {
   print "next;\n";
 }
 
+#pushes the variable parameter onto the list parameter
 sub pushOnto {
   my ($array_ref, $new_var) = @_;
-  #check if first declaration or updating
+  #check if it already exists on the list
   my $exists = 0;
   foreach my $var (@$array_ref) {
     $exists = 1 if ($var eq $new_var);
@@ -150,6 +152,7 @@ sub pushOnto {
 
 sub forStdinStatement {
   my $var = $_[0];
+  # store the variable
   pushOnto(\@variables,$var);
   $global_indentation += 1;
   print "foreach $var (<STDIN>) { \n";
@@ -158,12 +161,17 @@ sub forStdinStatement {
 sub forRangeStatement {
   #for range loop
   my ($var, $range) = @_;
+  # store the variable
   pushOnto(\@variables,$var);
   printIndentation();
+  # check whether it is a range(x) or a range(x, y)
   if ($range =~ /(.+)\s*,\s*(.+)/) {
-    my $lower = prefixVariables($1); my $upper = prefixVariables($2);
+    # bounds can be expressions, evaluate and print
+    my $lower = prefixVariables($1);
+    my $upper = prefixVariables($2);
     print "foreach \$$var ($lower..$upper - 1) {\n";
   } elsif ($range =~ /^\s*(\d+)\s*$/) {
+    # bound can be expression, evaluate it and print
     my $upper = prefixVariables($1);
     print "foreach \$$var (0..$upper - 1) {\n";
   } else {
@@ -173,6 +181,7 @@ sub forRangeStatement {
   $global_indentation++;
 }
 
+# applied to an expression. replaces a//b with int(a/b)
 sub sanitizeOperators {
   my $line = $_[0];
   #while we have an invalid // operator, swap it
@@ -181,39 +190,43 @@ sub sanitizeOperators {
     $line =~ s/$full/int($divisor1\/$divisor2)/g;
   }
   # if line starts with not, add brackting format
-  if ($line =~ /(\bnot\b\s*(.*))/) {
-    $line = "not($2)";
-  }
+  # if ($line =~ /(\bnot\b\s*(.*))/) {
+  #   $line = "not($2)";
+  # }
   return $line;
 }
 
 #used to handle if and while statments
 sub conditionalStatement {
-  #in the format if/while(condition): optional_inline; optional_inline
-  #type = while vs if
+  #loops are in the format if/while(condition): optional_inline; optional_inline ...
+  #type is either while or if
   my ($condition, $optional_inline, $type) = @_;
 
-  $condition = sanitizeOperators($condition);
   printIndentation();
+
+  $condition = sanitizeOperators($condition);
   $condition = prefixVariables($condition);
+  # print if (condition) or while(condition)
   print "$type ($condition) {\n";
   $global_indentation++;
 
-  if (!$optional_inline) {
-    #just a if/while statement
-    $condition = prefixVariables($condition);
-  } else {
-    #may have multiple inline statements, split them up and handle each appropriately
+  # if we have an inline statement such as if(condition):statement; statement;...
+  if ($optional_inline) {
+    #split them up and handle each appropriately
     my @statements = split '\s*;\s*', $optional_inline;
     foreach my $statement (@statements) {
         patternMatch($statement);
     }
     $global_indentation--;
-    printIndentation(); print "}\n";
+    # end by closing the parenthesis
+    printIndentation();
+    print "}\n";
   }
 }
 
+# prints any expression
 sub printStatment {
+    # optional quotations indicates string, and newline boolean determines if print new line or not
     my ($quotation,$print_content,$new_line) = @_;
     printIndentation();
     if ($quotation) {
@@ -221,41 +234,34 @@ sub printStatment {
         print "print \"$print_content\\n\";\n" unless $new_line;
         print "print \"$print_content\";\n" if $new_line;
     } else {
-        #print contains variables
-        my $print_content = prefixVariables($print_content);
-
-        if ($print_content =~ /\+|-|\*|\/|%/){
-            #printing an expression
-            print "print $print_content, \"\\n\";\n" unless $new_line;
-            print "print $print_content;\n" if $new_line;
-        } else {
-            #printing a variable
-            print "print \"$print_content\\n\";\n" unless $new_line;
-            print "print \"$print_content\";\n" if $new_line;
-        }
+        #printing expression, clean it up and print
+        $print_content = prefixVariables($print_content);
+        $print_content = sanitizeOperators($print_content);
+        print "print($print_content, \"\\n\");\n" unless $new_line;
+        print "print($print_content);\n" if $new_line;
     }
 }
 
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
-
     # if we are declaring a list, append to known lists and return
     if ($rhs =~ /^\s*\[\]\s*$/) {
       pushOnto(\@lists, $lhs);
       return;
     }
-
+    # add the variable to our list of variables
     pushOnto(\@variables,$lhs);
+    # if stdin, replace rhs with <STDIN>
     if ($rhs =~ /sys.stdin.readline\(\)/) {
-      # $rhs =~ s/sys.stdin.readline\(\)/<STDIN>/;
       $rhs = "<STDIN>";
     }
+    # clean up and print
     $rhs = sanitizeOperators($rhs);
     $rhs = prefixVariables($rhs);
     print "\$$lhs $operator $rhs;\n";
 }
 
-# inserts $before known variables in a string param
+# inserts appropriate prefix before known variables in an expression
 sub prefixVariables {
     my $str = $_[0];
     # prefix scalars with $
@@ -272,12 +278,14 @@ sub prefixVariables {
     return $str;
 }
 
+# prints the required indentation for a line
 sub printIndentation {
    foreach (1..$global_indentation) {
       print "    ";
    }
 }
 
+# given the current lines indentation, closes the appropriate amount of brackets
 sub closeAllBrackets {
   my $local_indentation = $_[0];
   while ($global_indentation != $local_indentation) {
