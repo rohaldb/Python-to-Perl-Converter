@@ -98,6 +98,8 @@ sub sanitizeMethods() {
   $expr =~ s/len\(@/scalar\(@/g;
   # replace len($scalar) with length($scalar)
   $expr =~ s/len\(/length\(/g;
+  #replace sorted(array) w sort(array)
+  $expr =~ s/sorted\(/sort\(/g;
   return $expr;
 }
 
@@ -336,12 +338,16 @@ sub variableAssignment {
       return;
     }
 
-    # if we are declaring a list
+    # if we are declaring a list by providing elements eg [1,2,3]
     if ($rhs =~ /^\s*\[(.*)\]\s*$/) {
       return unless $1;
       # store the list
       pushOnto(\@lists, $lhs);
       $rhs =~ tr/\[/\(/; $rhs =~ tr/\]/\)/;
+      print "\@$lhs $operator $rhs;\n";
+    } elsif ($rhs =~ /sort\(/) {
+      # we are declaring an array since rhs returns array
+      pushOnto(\@lists, $lhs);
       print "\@$lhs $operator $rhs;\n";
     } else {
       # we are declaring a variable

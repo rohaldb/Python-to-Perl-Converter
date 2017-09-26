@@ -56,5 +56,11 @@ Date: 26/9
 Start: 10:30pm
 Stop: 12:30pm
 Activity: Coding and clean up
-Comments: Cleaned up a lot of code. Refactored some parts, commented others. Afterward sorted out list declaration woth elements in it, which i forgot
+Comments: Cleaned up a lot of code. Refactored some parts, commented others. Afterward sorted out list declaration with elements in it, which i previously forgot.
+------------------------------------------------
+Date: 26/9
+Start: 2pm
+Stop: 6:30
+Activity: Coding
+Comments: fixed bug where couldnt do inline foreach stdin. Then redesigned print to handle % operator and end=''.
 ------------------------------------------------

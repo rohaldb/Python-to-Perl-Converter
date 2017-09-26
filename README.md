@@ -4,4 +4,5 @@ http://www.cse.unsw.edu.au/~cs2041/assignments/pypl
 still to do:
 deal with //!
 cant print "sdasd", "asdjnasd"
-['"]
+['"] --> i think this is okay
+assigning list @a = b
