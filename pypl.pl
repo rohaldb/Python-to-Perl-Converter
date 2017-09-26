@@ -60,12 +60,11 @@ sub patternMatch {
         #continue statement
         continueStatement($line);
     } elsif ($line =~ /^\s*print\s*\(\s*(.*?)\s*\)\s*;{0,1}\s*$/) {
-        #printing. 0 means no new line
-        printStatment($1);
-        # printStatment($1,$2,0);
-    } elsif ($line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
-        #printing. 1 means new line
-        printStatment($1,$2,1);
+        #printing. 0 means called from print
+        printStatment($1,0);
+    } elsif ($line =~ /^\s*sys.stdout.write\s*\((.*?)\)\s*;{0,1}\s*$/) {
+        #printing. 1 means called from sys.stdout
+        printStatment($1, 1);
     }  elsif ($line =~ /^\s*(\w+)\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {
         #assignment of a variable
         printIndentation();
@@ -242,23 +241,26 @@ sub conditionalStatement {
 
 # prints any expression
 sub printStatment {
-    # optional quotations indicates string, and newline boolean determines if print new line or not
-    my $print_content = $_[0];
+    # prints any expression. first param is content, second indicates if function is being called from match on print, or match on std.out
+    my ($print_content, $stdout) = @_;
     printIndentation();
-    print "received content '$print_content'\n";
     # if printing nothing. eg print(), print new line and return
     if ($print_content =~ /^\s*$/) {
       print "print \"\\n\";\n";
       return;
     }
+    # check if there is a custom end
+    my $end_exists = endOfPrintExists($print_content);
+    # get the custom end regardless of whether it exists.
+    my $end = getEndOfPrint($print_content);
+    # set end to new line unless there is another one specified, or unless the params tell us we are in sys.stdout
+    $end = "\\n" unless ($end_exists or $stdout);
 
-    if ($print_content =~ /^["'](.*?)["'](.*)/) {
+    if ($print_content =~ /^"(.*?)"(.*)/ or $print_content =~ /^'(.*?)'(.*)/) {
         my ($string, $remaining) = ($1, $2);
         # if we enter here, we are printing a string
-        # check if there is a custom end=''
-        my $end = customEndOfPrint($remaining);
         # we now assume that there is a % with variables to substitute
-        if ($end) {
+        if ($end_exists) {
           # cut the end off (if it exists). format after operation: ' % (x,y,z)'
           $remaining =~ s/\s*,\s*end.*//g;
           # remove encasing brackets. format after operation: ' % x,y,z'
@@ -274,13 +276,28 @@ sub printStatment {
           # substitute variables before printing
           $string = subVarsIntoString($string, @variables);
         }
-        print "print \"$string$end\"\n";
+        print "print \"$string$end\";\n";
     } else {
         # if we enter here, we are printing an expression
-        # check if there is a custom end=''
-        my $end = customEndOfPrint($remaining);
-        print "not printing a string\n";
+        $print_content =~ s/\s*,\s*end.*//g;
+        $print_content = sanitizeExpression($print_content);
+        print "print($print_content, \"$end\");\n";
     }
+}
+
+# returns boolean depending on if end='' exists
+sub endOfPrintExists {
+  return $_[0] =~ /end\s*=\s*['"](.*)['"]/;
+}
+
+# returns str val of custom end to print statement
+sub getEndOfPrint {
+  my $content = $_[0];
+  if ($content =~ /end\s*=\s*['"](.*)['"]/) {
+    return escapeAllSpecialCharacters($1);
+  } else {
+    return '';
+  }
 }
 
 sub subVarsIntoString {
@@ -300,39 +317,6 @@ sub escapeAllSpecialCharacters {
   my $string = $_[0];
   $string =~ s/\.\^\$\*\+\-\?\(\)\[\]\{\}\\\|/\\$1/g;
   return $string;
-}
-
-sub customEndOfPrint {
-  my $content = $_[0];
-  if ($content =~ /end\s*=\s*['"](.*)['"]/) {
-    return escapeAllSpecialCharacters($1);
-  } else {
-    return "";
-  }
-}
-
-# prints any expression
-sub printStatment2 {
-    # optional quotations indicates string, and newline boolean determines if print new line or not
-    my ($quotation,$print_content,$new_line) = @_;
-    printIndentation();
-
-    # if printing nothing. eg print(), print new line and return
-    if ($print_content =~ /^\s*$/) {
-      print "print \"\\n\";\n";
-      return;
-    }
-
-    if ($quotation) {
-        # printing a string
-        print "print \"$print_content\\n\";\n" unless $new_line;
-        print "print \"$print_content\";\n" if $new_line;
-    } else {
-        #printing expression, clean it up and print
-        $print_content = sanitizeExpression($print_content);
-        print "print($print_content, \"\\n\");\n" unless $new_line;
-        print "print($print_content);\n" if $new_line;
-    }
 }
 
 # converts param = sys.stdin.readlines() to a while loop
