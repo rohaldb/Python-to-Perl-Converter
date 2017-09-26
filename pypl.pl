@@ -81,14 +81,23 @@ sub patternMatch {
     }
 }
 
-# given a python expression, sanitizes it in a range of ways
+# given a python expression, sanitizes it through subs
 sub sanitizeExpression {
   my $expr = $_[0];
   # 1. replaces invalid operators with valid ones
-  $expr = sanitizeOperators($expr);
   # 2. replaces variables and lists with prefixes
-  $expr = prefixVariables($expr);
   # 3. replaces method definitions with appropriate syntax
+  $expr = sanitizeMethods(prefixVariables(sanitizeOperators($expr)));
+  return $expr;
+}
+
+# given an expression, substitutes all instances of lenth with appropriate syntax
+sub sanitizeMethods() {
+  my $expr = $_[0];
+  # replace len(@array) with scalar(@array)
+  $expr =~ s/len\(@/scalar\(@/g;
+  # replace len($scalar) with length($scalar)
+  $expr =~ s/len\(/length\(/g;
   return $expr;
 }
 
@@ -186,17 +195,17 @@ sub forRangeStatement {
 
 # applied to an expression. replaces a//b with int(a/b)
 sub sanitizeOperators {
-  my $line = $_[0];
+  my $expr = $_[0];
   #while we have an invalid // operator, swap it
-  while ($line =~ /((\w+)\s*\/\/\s*(\w+))/) {
+  while ($expr =~ /((\w+)\s*\/\/\s*(\w+))/) {
     my $full = $1; my $divisor1 = $2; my $divisor2 = $3;
-    $line =~ s/$full/int($divisor1\/$divisor2)/g;
+    $expr =~ s/$full/int($divisor1\/$divisor2)/g;
   }
   # if line starts with not, add brackting format
-  # if ($line =~ /(\bnot\b\s*(.*))/) {
-  #   $line = "not($2)";
+  # if ($expr =~ /(\bnot\b\s*(.*))/) {
+  #   $expr = "not($2)";
   # }
-  return $line;
+  return $expr;
 }
 
 #used to handle if and while statments
@@ -274,19 +283,19 @@ sub variableAssignment {
 
 # inserts appropriate prefix before known variables in an expression
 sub prefixVariables {
-    my $str = $_[0];
+    my $expr = $_[0];
     # prefix scalars with $
     foreach my $var (@variables) {
-      $str =~ s/\b$var\b/\$$var/g;
+      $expr =~ s/\b$var\b/\$$var/g;
     }
     # prefix indexed arrays with either $/@
     foreach my $var (@lists) {
       # if the sed for a $ doesnt match, must be @
-      if (not($str =~ s/\b$var\[/\$$var\[/g)) {
-        $str =~ s/\b$var\b/\@$var/g;
+      if (not($expr =~ s/\b$var\[/\$$var\[/g)) {
+        $expr =~ s/\b$var\b/\@$var/g;
       }
     }
-    return $str;
+    return $expr;
 }
 
 # prints the required indentation for a line
