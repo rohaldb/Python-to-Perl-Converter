@@ -6,5 +6,3 @@ deal with //!
 cant print "sdasd", "asdjnasd"
 ['"] --> i think this is okay
 assigning list @a = b
-
-}  elsif ($line =~ /^\s*(\w+(?:[\[\{][\d\w]+[\]\}]){0,1})\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {

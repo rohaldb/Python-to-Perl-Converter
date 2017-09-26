@@ -86,9 +86,10 @@ sub patternMatch {
 sub sanitizeExpression {
   my $expr = $_[0];
   # 1. replaces invalid operators with valid ones
-  # 2. replaces variables and lists with prefixes
-  # 3. replaces method definitions with appropriate syntax
-  $expr = sanitizeMethods(prefixVariables(sanitizeOperators($expr)));
+  # 2. check if we need to fix braces on scalar assignment in dict or list
+  # 3. replaces variables,lists and dicts with prefixes
+  # 4. replaces method definitions with appropriate syntax
+  $expr = sanitizeMethods(prefixVariables(sanitizeBraces(sanitizeOperators($expr))));
   return $expr;
 }
 
@@ -347,7 +348,8 @@ sub variableAssignment {
       $rhs =~ s/^\s*\{/\(/;$rhs =~ s/\}\s*$/\)/;
       # replace colons with commas
       $rhs =~ tr/:/,/;
-      print "%$lhs $operator $rhs\n;";
+      $lhs = sanitizeExpression($lhs);
+      print "$lhs $operator $rhs;\n";
     } elsif ($rhs =~ /^\s*\[(.*)\]\s*$/) {
       # if we are declaring a list by providing elements eg [1,2,3]
       # dont print declaration of empty list
@@ -356,41 +358,36 @@ sub variableAssignment {
       pushOnto(\@lists, $lhs);
       # change inner and outer braces
       $rhs =~ s/^\s*\[/\(/;$rhs =~ s/\]\s*$/\)/;
-      print "\@$lhs $operator $rhs;\n";
+      $lhs = sanitizeExpression($lhs);
+      print "$lhs $operator $rhs;\n";
     } elsif ($rhs =~ /sort\(/) {
       # we are declaring a list since rhs returns array
       pushOnto(\@lists, $lhs);
-      print "\@$lhs $operator $rhs;\n";
+      $lhs = sanitizeExpression($lhs);
+      print "$lhs $operator $rhs;\n";
     } else {
       # assigning scalar value
       my $prefix = "\$";
       # check if we are dealing with scalar assignment to hash or array
-      if ($lhs =~ /(\w+)\[['"]{0,1}\w+['"]{0,1}\]/) {
-        # if assigning to hash, fix brackets
-        if (belongsTo(\@dicts, $1)) {
-          $lhs =~ tr/\[/\{/;$lhs =~ tr/\]/\}/;
-          $prefix = "%";
-        }
-      } else {
+      unless ($lhs =~ /(\w+)\[['"]{0,1}\w+['"]{0,1}\]/) {
         pushOnto(\@scalars,$lhs);
       }
       # if stdin, replace rhs with <STDIN>
       if ($rhs =~ /sys.stdin.readline\(\)/) {
         $rhs = "<STDIN>";
       }
-      print "\$$lhs $operator $rhs;\n";
+      $lhs = sanitizeExpression($lhs);
+      print "$lhs $operator $rhs;\n";
     }
 }
 
-#checks if an elem belongs to a list (string names)
-sub belongsTo {
-  my ($array_ref, $var1) = @_;
-  #check if it already exists on the list
-  my $exists = 0;
-  foreach my $var2 (@$array_ref) {
-    $exists = 1 if ($var2 eq $var1);
+# replaces hash[x] w hash{x}
+sub sanitizeBraces {
+  my $expr = $_[0];
+  foreach my $dict (@dicts) {
+    $expr =~ s/$dict\[(['"]{0,1}\w+['"]{0,1})\]/$dict\{$1\}/g;
   }
-  return $exists;
+  return $expr;
 }
 
 # inserts appropriate prefix before known variables in an expression
@@ -407,8 +404,27 @@ sub prefixVariables {
         $expr =~ s/\b$var\b/\@$var/g;
       }
     }
+    # prefix indexed dicts with either $/%
+    foreach my $var (@dicts) {
+      # if the sed for a $ doesnt match, must be %
+      if (not($expr =~ s/\b$var\{/\$$var\{/g)) {
+        $expr =~ s/\b$var\b/%$var/g;
+      }
+    }
     return $expr;
 }
+
+#checks if an elem belongs to a list (string names)
+sub belongsTo {
+  my ($array_ref, $var1) = @_;
+  #check if it already exists on the list
+  my $exists = 0;
+  foreach my $var2 (@$array_ref) {
+    $exists = 1 if ($var2 eq $var1);
+  }
+  return $exists;
+}
+
 
 # prints the required indentation for a line
 sub printIndentation {
