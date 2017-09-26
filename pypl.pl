@@ -3,7 +3,7 @@
 # written by ben rohald 2017
 use strict;
 
-our @variables;
+our @scalars;
 our @lists;
 our @dicts;
 our $global_indentation = 0;
@@ -168,7 +168,7 @@ sub pushOnto {
 sub forStdinStatement {
   my ($var, $optional_inline) = @_;
   # store the variable
-  pushOnto(\@variables,$var);
+  pushOnto(\@scalars,$var);
   $global_indentation += 1;
   print "foreach \$$var (<STDIN>) { \n";
   handleOptionalInline($optional_inline);
@@ -194,7 +194,7 @@ sub forRangeStatement {
   #for range loop
   my ($var, $range, $optional_inline) = @_;
   # store the variable
-  pushOnto(\@variables,$var);
+  pushOnto(\@scalars,$var);
   printIndentation();
   # check whether it is a range(x) or a range(x, y)
   if ($range =~ /(.+)\s*,\s*(.+)/) {
@@ -275,9 +275,9 @@ sub printStatment {
         # if remaining is not empty, we know there are no variables to subsitute
         if ($remaining) {
           # split the variables into a list to be used for subsituton
-          my @variables = split /\s*,\s*/, $remaining;
+          my @vars_to_sub = split /\s*,\s*/, $remaining;
           # substitute variables before printing
-          $string = subVarsIntoString($string, @variables);
+          $string = subVarsIntoString($string, @vars_to_sub);
         }
         print "print \"$string$end\";\n";
     } else {
@@ -304,10 +304,10 @@ sub getEndOfPrint {
 }
 
 sub subVarsIntoString {
-  my ($string, @variables) = @_;
+  my ($string, @vars_to_sub) = @_;
   while ($string =~ /(%\w)/) {
     my $symbol = $1;
-    my $variable = shift(@variables);
+    my $variable = shift(@vars_to_sub);
     # cut leading and trailing quotes if case string
     $variable =~ s/^['"]//; $variable =~ s/['"]$//;
     $string =~ s/$symbol/$variable/;
@@ -347,13 +347,14 @@ sub variableAssignment {
       $rhs =~ s/^\s*\{/\(/;$rhs =~ s/\}\s*$/\)/;
       # replace colons with commas
       $rhs =~ tr/:/,/;
-      print "%$lhs $operator $rhs\n";
+      print "%$lhs $operator $rhs\n;";
     } elsif ($rhs =~ /^\s*\[(.*)\]\s*$/) {
       # if we are declaring a list by providing elements eg [1,2,3]
       # dont print declaration of empty list
       return unless $1;
       # store the list
       pushOnto(\@lists, $lhs);
+      # change inner and outer braces
       $rhs =~ s/^\s*\[/\(/;$rhs =~ s/\]\s*$/\)/;
       print "\@$lhs $operator $rhs;\n";
     } elsif ($rhs =~ /sort\(/) {
@@ -361,9 +362,18 @@ sub variableAssignment {
       pushOnto(\@lists, $lhs);
       print "\@$lhs $operator $rhs;\n";
     } else {
-      # we are declaring a variable
-      # add the variable to our list of variables
-      pushOnto(\@variables,$lhs);
+      # assigning scalar value
+      my $prefix = "\$";
+      # check if we are dealing with scalar assignment to hash or array
+      if ($lhs =~ /(\w+)\[['"]{0,1}\w+['"]{0,1}\]/) {
+        # if assigning to hash, fix brackets
+        if (belongsTo(\@dicts, $1)) {
+          $lhs =~ tr/\[/\{/;$lhs =~ tr/\]/\}/;
+          $prefix = "%";
+        }
+      } else {
+        pushOnto(\@scalars,$lhs);
+      }
       # if stdin, replace rhs with <STDIN>
       if ($rhs =~ /sys.stdin.readline\(\)/) {
         $rhs = "<STDIN>";
@@ -372,11 +382,22 @@ sub variableAssignment {
     }
 }
 
+#checks if an elem belongs to a list (string names)
+sub belongsTo {
+  my ($array_ref, $var1) = @_;
+  #check if it already exists on the list
+  my $exists = 0;
+  foreach my $var2 (@$array_ref) {
+    $exists = 1 if ($var2 eq $var1);
+  }
+  return $exists;
+}
+
 # inserts appropriate prefix before known variables in an expression
 sub prefixVariables {
     my $expr = $_[0];
     # prefix scalars with $
-    foreach my $var (@variables) {
+    foreach my $var (@scalars) {
       $expr =~ s/\b$var\b/\$$var/g;
     }
     # prefix indexed arrays with either $/@
