@@ -59,9 +59,10 @@ sub patternMatch {
     } elsif ($line =~ /^\s*continue\s*;{0,1}\s*$/) {
         #continue statement
         continueStatement($line);
-    } elsif ($line =~ /^\s*print\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
+    } elsif ($line =~ /^\s*print\s*\(\s*(.*?)\s*\)\s*;{0,1}\s*$/) {
         #printing. 0 means no new line
-        printStatment($1,$2,0);
+        printStatment($1);
+        # printStatment($1,$2,0);
     } elsif ($line =~ /^\s*sys.stdout.write\s*\(\s*("{0,1})(.*?)"{0,1}\s*\)\s*;{0,1}\s*$/) {
         #printing. 1 means new line
         printStatment($1,$2,1);
@@ -241,6 +242,77 @@ sub conditionalStatement {
 
 # prints any expression
 sub printStatment {
+    # optional quotations indicates string, and newline boolean determines if print new line or not
+    my $print_content = $_[0];
+    printIndentation();
+    print "received content '$print_content'\n";
+    # if printing nothing. eg print(), print new line and return
+    if ($print_content =~ /^\s*$/) {
+      print "print \"\\n\";\n";
+      return;
+    }
+
+    if ($print_content =~ /^["'](.*?)["'](.*)/) {
+        my ($string, $remaining) = ($1, $2);
+        # if we enter here, we are printing a string
+        # check if there is a custom end=''
+        my $end = customEndOfPrint($remaining);
+        # we now assume that there is a % with variables to substitute
+        if ($end) {
+          # cut the end off (if it exists). format after operation: ' % (x,y,z)'
+          $remaining =~ s/\s*,\s*end.*//g;
+          # remove encasing brackets. format after operation: ' % x,y,z'
+          $remaining =~ s/[\(\)]//g;
+          # at this point, remaining should be in the same format as if ther was no end
+        }
+        # format after operation: % x,y,z
+        $remaining =~ s/^\s*%\s*//g;
+        # if remaining is not empty, we know there are no variables to subsitute
+        if ($remaining) {
+          # split the variables into a list to be used for subsituton
+          my @variables = split /\s*,\s*/, $remaining;
+          # substitute variables before printing
+          $string = subVarsIntoString($string, @variables);
+        }
+        print "print \"$string$end\"\n";
+    } else {
+        # if we enter here, we are printing an expression
+        # check if there is a custom end=''
+        my $end = customEndOfPrint($remaining);
+        print "not printing a string\n";
+    }
+}
+
+sub subVarsIntoString {
+  my ($string, @variables) = @_;
+  while ($string =~ /(%\w)/) {
+    my $symbol = $1;
+    my $variable = shift(@variables);
+    # cut leading and trailing quotes if case string
+    $variable =~ s/^['"]//; $variable =~ s/['"]$//;
+    $string =~ s/$symbol/$variable/;
+  }
+  return $string;
+}
+
+# escapes all special chars from string
+sub escapeAllSpecialCharacters {
+  my $string = $_[0];
+  $string =~ s/\.\^\$\*\+\-\?\(\)\[\]\{\}\\\|/\\$1/g;
+  return $string;
+}
+
+sub customEndOfPrint {
+  my $content = $_[0];
+  if ($content =~ /end\s*=\s*['"](.*)['"]/) {
+    return escapeAllSpecialCharacters($1);
+  } else {
+    return "";
+  }
+}
+
+# prints any expression
+sub printStatment2 {
     # optional quotations indicates string, and newline boolean determines if print new line or not
     my ($quotation,$print_content,$new_line) = @_;
     printIndentation();
