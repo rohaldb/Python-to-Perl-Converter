@@ -229,6 +229,13 @@ sub printStatment {
     # optional quotations indicates string, and newline boolean determines if print new line or not
     my ($quotation,$print_content,$new_line) = @_;
     printIndentation();
+
+    # if printing nothing. eg print(), print new line and return
+    if ($print_content =~ /^\s*$/) {
+      print "print \"\\n\";\n";
+      return;
+    }
+
     if ($quotation) {
         # printing a string
         print "print \"$print_content\\n\";\n" unless $new_line;
