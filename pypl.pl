@@ -99,6 +99,7 @@ sub forStatement {
 # eg. for i in (array/keys dict / sorted array) etc
 sub generalForStatement {
   my ($var, $expr, $optional_inline) = @_;
+  pushOnto(\@scalars, $var);
   $expr = sanitizeExpression($expr);
   $var = sanitizeExpression($var);
   printIndentation();
@@ -110,15 +111,15 @@ sub generalForStatement {
 # given a python expression, sanitizes it through subs
 sub sanitizeExpression {
   my $expr = $_[0];
-  # 1. replaces invalid operators with valid ones
-  # 2. check if we need to fix braces on scalar assignment in dict or list
-  # 3. replaces variables,lists and dicts with prefixes
-  # 4. replaces method definitions with appropriate syntax
-  $expr = sanitizeMethods(prefixVariables(sanitizeBraces(sanitizeOperators($expr))));
+  # 1. replaces invalid operators with valid ones: sanitizeOperators
+  # 2. check if we need to fix braces on scalar assignment in dict or list: sanitizeBraces
+  # 3. replaces variables,lists and dicts with prefixes: sanitizePrefix
+  # 4. replaces method definitions with appropriate syntax: sanitize methods
+  $expr = sanitizeMethods(sanitizePrefix(sanitizeBraces(sanitizeOperators($expr))));
   return $expr;
 }
 
-# given an expression, substitutes all instances of lenth with appropriate syntax
+# given an expression, substitutes all instances of invalid methods with appropriate syntax
 sub sanitizeMethods() {
   my $expr = $_[0];
   # replace len(@array) with scalar(@array)
@@ -127,6 +128,8 @@ sub sanitizeMethods() {
   $expr =~ s/len\(/length\(/g;
   #replace sorted(array) w sort(array)
   $expr =~ s/sorted\(/sort\(/g;
+  # replace hash.keys() w keys %hash
+  $expr =~ s/(%\w+)\.keys\(\)/keys $1/g;
   return $expr;
 }
 
@@ -419,7 +422,7 @@ sub sanitizeBraces {
 }
 
 # inserts appropriate prefix before known variables in an expression
-sub prefixVariables {
+sub sanitizePrefix {
     my $expr = $_[0];
     # prefix scalars with $
     foreach my $var (@scalars) {
