@@ -70,8 +70,11 @@ sub patternMatch {
     } elsif ($line =~ /\s*(\w+)\.(\w+)\((.*)\)\s*;{0,1}\s*$/) {
         # method being called on a list. can be either push or pop. Check which it is and call appropriate sub
         my $array_ref = $1; my $method = $2; my $var = $3;
-        appendStatement($array_ref, $var) if ($method =~ /append/);
-        popStatement($array_ref, $var) if ($method =~ /pop/);
+        if ($method =~ /append/) {
+          print appendStatement($array_ref, $var), ";\n";
+        } elsif ($method =~ /pop/) {
+          print popStatement($array_ref, $var), ";\n";
+        }
     } else {
         # Lines we can't translate are turned into comments
         printIndentation();
@@ -130,6 +133,16 @@ sub sanitizeMethods() {
   $expr =~ s/sorted\(/sort\(/g;
   # replace hash.keys() w keys %hash
   $expr =~ s/(%\w+)\.keys\(\)/keys $1/g;
+  # replace array.pop w pop(array)
+  if ($expr =~ /@(\w+)\.pop\((.*)\)/) {
+    my $temp = popStatement($1, $2);
+    $expr =~ s/@(\w+)\.pop\((.*)\)/$temp/;
+  }
+  # replace array.append w push(array)
+  if ($expr =~ /@(\w+)\.append\((.*)\)/) {
+    my $temp = appendStatement($1, $2);
+    $expr =~ s/@(\w+)\.append\((.*)\)/$temp/;
+  }
   return $expr;
 }
 
@@ -140,11 +153,13 @@ sub popStatement {
   printIndentation();
   # check if we have a variable indicating index eg. pop(x) or popping final elem
   if ($var eq '') {
-    print "pop(\@$array_ref);\n";
+    return "pop(\@$array_ref)"
+    # print "pop(\@$array_ref);\n";
   } else {
     # clean up whatever is being pushed as it could be an expression
     $var = sanitizeExpression($var);
-    print "splice \@$array_ref, $var, 1;\n";
+    return "splice(\@$array_ref, $var, 1)";
+    # print "splice \@$array_ref, $var, 1;\n";
   }
 }
 
@@ -155,7 +170,8 @@ sub appendStatement {
   # clean up whatever is being pushed as it could be an expression
   $var = sanitizeExpression($var);
   printIndentation();
-  print "push \@$array_ref, $var;\n";
+  return "push(\@$array_ref, $var)";
+  # print "push(\@$array_ref, $var);\n";
 }
 
 sub elseIfStatement {
