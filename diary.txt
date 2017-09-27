@@ -64,3 +64,15 @@ Stop: 6:30
 Activity: Coding
 Comments: fixed bug where couldnt do inline foreach stdin. Then redesigned print to handle % operator and end=''.
 ------------------------------------------------
+Date: 26/9
+Start: 7:30pm
+Stop: 10pm
+Activity: Coding
+Comments: began working on hashs. Have them printing and assigning
+------------------------------------------------
+Date: 27/9
+Start: 10am
+Stop: 11am
+Activity: Refactoring
+Comments: Cleaned up the way for statements work to allow: for in (anything)
+------------------------------------------------

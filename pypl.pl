@@ -36,12 +36,9 @@ sub patternMatch {
         print $line;
     } elsif ($line =~ /^\s*import\s+sys\s*;{0,1}$/) {
         return;
-    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+range\s*\((.*)\)\s*:\s*(.*)$/) {
+    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+(.*?)\s*:\s*(.*)$/) {
         #for loop with range
-        forRangeStatement($1,$2,$3);
-    } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+sys\.stdin\s*:\s*(.*)$/) {
-        #for loop over stdin
-        forStdinStatement($1,$2);
+        forStatement($1,$2, $3);
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
         #while statement, be it inline or multiline
         conditionalStatement($1,$2, "while");
@@ -80,6 +77,34 @@ sub patternMatch {
         printIndentation();
         print "#$line\n";
     }
+}
+
+# when pattern matched on for var in (), handles possible cases
+sub forStatement {
+  my ($var, $expr, $optional_inline) = @_;
+  # check which kind of statement we have
+  if ($expr =~ /sys\.stdin/) {
+    # stdin
+    forStdinStatement($var,$optional_inline);
+  } elsif ($expr =~ /range\s*\((.*)\)/) {
+    # range
+    forRangeStatement($var,$1,$optional_inline);
+  } else {
+    # can be any expression, such as @array or $dict.keys
+    generalForStatement($var, $expr, $optional_inline);
+  }
+}
+
+# handles for statements where conditional is not a range or a sys.stdin
+# eg. for i in (array/keys dict / sorted array) etc
+sub generalForStatement {
+  my ($var, $expr, $optional_inline) = @_;
+  $expr = sanitizeExpression($expr);
+  $var = sanitizeExpression($var);
+  printIndentation();
+  print "foreach $var ($expr) { \n";
+  $global_indentation++;
+  handleOptionalInline($optional_inline);
 }
 
 # given a python expression, sanitizes it through subs
@@ -175,11 +200,12 @@ sub forStdinStatement {
   handleOptionalInline($optional_inline);
 }
 
+# checks if param is a set of inline statements and handles each appropriately
 sub handleOptionalInline {
   my $optional_inline = $_[0];
   # if we have an inline statement such as if(condition):statement; statement;...
   if ($optional_inline) {
-    #split them up and handle each appropriately
+    #split them up and handle each
     my @statements = split '\s*;\s*', $optional_inline;
     foreach my $statement (@statements) {
         patternMatch($statement);
@@ -203,7 +229,7 @@ sub forRangeStatement {
     my $lower = sanitizeExpression($1);
     my $upper = sanitizeExpression($2);
     print "foreach \$$var ($lower..$upper - 1) {\n";
-  } elsif ($range =~ /^\s*(\d+)\s*$/) {
+  } elsif ($range =~ /^\s*(.+)\s*$/) {
     # bound can be expression, evaluate it and print
     my $upper = sanitizeExpression($1);
     print "foreach \$$var (0..$upper - 1) {\n";
@@ -339,6 +365,8 @@ sub variableAssignment {
       readLinesStatement($lhs);
       return;
     }
+
+    # the type of the lhs depends on what is on the rhs. We now go through all the cases
 
     # declaring a hash
     if ($rhs =~ /^\s*\{(.*)\}\s*$/) {
