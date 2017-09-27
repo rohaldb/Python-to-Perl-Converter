@@ -304,34 +304,48 @@ sub printStatment {
     my $end = getEndOfPrint($print_content);
     # set end to new line unless there is another one specified, or unless the params tell us we are in sys.stdout
     $end = "\\n" unless ($end_exists or $stdout);
+    # cut the end off (if it exists).
+    $print_content =~ s/\s*,\s*end.*//g;
 
-    if ($print_content =~ /^"(.*?)"(.*)/ or $print_content =~ /^'(.*?)'(.*)/) {
-        my ($string, $remaining) = ($1, $2);
-        # if we enter here, we are printing a string
-        # we now assume that there is a % with variables to substitute
-        if ($end_exists) {
-          # cut the end off (if it exists). format after operation: ' % (x,y,z)'
-          $remaining =~ s/\s*,\s*end.*//g;
-          # remove encasing brackets. format after operation: ' % x,y,z'
-          $remaining =~ s/[\(\)]//g;
-          # at this point, remaining should be in the same format as if ther was no end
-        }
-        # format after operation: % x,y,z
-        $remaining =~ s/^\s*%\s*//g;
-        # if remaining is not empty, we know there are no variables to subsitute
-        if ($remaining) {
-          # split the variables into a list to be used for subsituton
-          my @vars_to_sub = split /\s*,\s*/, $remaining;
-          # substitute variables before printing
-          $string = subVarsIntoString($string, @vars_to_sub);
-        }
-        print "print \"$string$end\";\n";
-    } else {
-        # if we enter here, we are printing an expression
-        $print_content =~ s/\s*,\s*end.*//g;
-        $print_content = sanitizeExpression($print_content);
-        print "print($print_content, \"$end\");\n";
+    my @sub_prints = split /\s*,\s*/, $print_content;
+    my $counter = 0;
+    print "print(";
+    foreach my $print (@sub_prints) {
+      print ", \" \", " unless ($counter == 0);
+      printSubPrint($print, $end, $end_exists);
+      $counter++;
     }
+    print ", \"$end\");\n";
+}
+
+sub printSubPrint() {
+  my ($print_content, $end, $end_exists) = @_;
+  if ($print_content =~ /^"(.*?)"(.*)/ or $print_content =~ /^'(.*?)'(.*)/) {
+      my ($string, $remaining) = ($1, $2);
+      # if we enter here, we are printing a string
+      # we now assume that there is a % with variables to substitute
+      if ($end_exists) {
+        # remove encasing brackets. format after operation: ' % x,y,z'
+        $remaining =~ s/[\(\)]//g;
+        # at this point, remaining should be in the same format as if ther was no end
+      }
+      # format after operation: % x,y,z
+      $remaining =~ s/^\s*%\s*//g;
+      # if remaining is not empty, we know there are no variables to subsitute
+      if ($remaining) {
+        # split the variables into a list to be used for subsituton
+        my @vars_to_sub = split /\s*,\s*/, $remaining;
+        # substitute variables before printing
+        $string = subVarsIntoString($string, @vars_to_sub);
+      }
+      # print "print \"$string$end\";\n";
+      print "\"$string\"";
+  } else {
+      # if we enter here, we are printing an expression
+      $print_content = sanitizeExpression($print_content);
+      print "$print_content";
+      # print "print($print_content, \"$end\");\n";
+  }
 }
 
 # returns boolean depending on if end='' exists
