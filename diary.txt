@@ -76,3 +76,9 @@ Stop: 11am
 Activity: Refactoring
 Comments: Cleaned up the way for statements work to allow: for in (anything)
 ------------------------------------------------
+Date: 27/9
+Start: 8pm
+Stop: 9:30pm
+Activity: Fixing
+Comments: Fixed issue where couldnt print something in format print(x, y, z)
+------------------------------------------------

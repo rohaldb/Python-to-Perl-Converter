@@ -325,7 +325,8 @@ sub printStatment {
 }
 
 # since a print statement can be in a complex form like print("%s %s %d" % ("ben", "is", 8), "years old");
-# we dont want to split on commas inside the list of variables to substitute
+# we want to split it up into multiple statements, and handle each individually.
+# however performing the split is hard since commas can exist inside ("ben", "is", 8)
 # this function recrusively goes through character by character and splits appropriately, by marking when we are inside a set of brackets
 sub recursiveSplit {
   # the array to itterate over
@@ -551,23 +552,3 @@ sub closeAllBrackets {
     print "}\n";
   }
 }
-
-# sub spaceOperators {
-#     my $line = $_[0];
-#     #provide appropriate spacing
-#     $line =~ s/\+/ + /g;
-#     $line =~ s/-/ - /g;
-#     $line =~ s/\*/ * /g;
-#     $line =~ s/\// \/ /g;
-#     $line =~ s/\/\// \/\/ /g;
-#     $line =~ s/\* \*/ \*\* /g;
-#     $line =~ s/%/ % /g;
-#     $line =~ s/  */ /g;
-#     $line =~ s/\* \*/\*\*/g;
-#     $line =~ s/\/ \//\/\//g;
-#     $line =~ s/\+ =/\+=/g;
-#     $line =~ s/- =/-=/g;
-#     $line =~ s/\* =/\*=/g;
-#     $line =~ s/\/ =/\/=/g;
-#     return $line;
-# }
