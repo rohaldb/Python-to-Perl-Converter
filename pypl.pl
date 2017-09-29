@@ -304,34 +304,93 @@ sub printStatment {
     my $end = getEndOfPrint($print_content);
     # set end to new line unless there is another one specified, or unless the params tell us we are in sys.stdout
     $end = "\\n" unless ($end_exists or $stdout);
+    # cut the end off (if it exists).
+    $print_content =~ s/\s*,\s*end.*//g;
 
-    if ($print_content =~ /^"(.*?)"(.*)/ or $print_content =~ /^'(.*?)'(.*)/) {
-        my ($string, $remaining) = ($1, $2);
-        # if we enter here, we are printing a string
-        # we now assume that there is a % with variables to substitute
-        if ($end_exists) {
-          # cut the end off (if it exists). format after operation: ' % (x,y,z)'
-          $remaining =~ s/\s*,\s*end.*//g;
-          # remove encasing brackets. format after operation: ' % x,y,z'
-          $remaining =~ s/[\(\)]//g;
-          # at this point, remaining should be in the same format as if ther was no end
-        }
-        # format after operation: % x,y,z
-        $remaining =~ s/^\s*%\s*//g;
-        # if remaining is not empty, we know there are no variables to subsitute
-        if ($remaining) {
-          # split the variables into a list to be used for subsituton
-          my @vars_to_sub = split /\s*,\s*/, $remaining;
-          # substitute variables before printing
-          $string = subVarsIntoString($string, @vars_to_sub);
-        }
-        print "print \"$string$end\";\n";
-    } else {
-        # if we enter here, we are printing an expression
-        $print_content =~ s/\s*,\s*end.*//g;
-        $print_content = sanitizeExpression($print_content);
-        print "print($print_content, \"$end\");\n";
+    # break the print up in the right way
+    # to see how this works, see recursiveSplit()
+    my @sub_prints = recursiveSplit($print_content);
+
+    # print each part of the print statement
+    my $counter = 0;
+    print "print(";
+    foreach my $print (@sub_prints) {
+      # only put commas and spaces after the first element
+      print ", \" \", " unless ($counter == 0);
+      # print this part of the print statement
+      printSubPrint($print);
+      $counter++;
     }
+    print ", \"$end\");\n";
+}
+
+# since a print statement can be in a complex form like print("%s %s %d" % ("ben", "is", 8), "years old");
+# we want to split it up into multiple statements, and handle each individually.
+# however performing the split is hard since commas can exist inside ("ben", "is", 8)
+# this function recrusively goes through character by character and splits appropriately, by marking when we are inside a set of brackets
+sub recursiveSplit {
+  # the array to itterate over
+  my @char_array = split //, $_[0];
+  # boolean if we are able to split or not
+  my $can_split = 1;
+  # index used to split the array
+  my $index = 0;
+  # return value initialized
+  my @return_array;
+  # used to return the initial strring at the end if nothing was split
+  my $found_match = 0;
+  foreach my $char (@char_array) {
+    # if we previously could split but found an open bracket, we can no longer split
+    if ($char eq '(' and $can_split == 1) {
+      $can_split = 0;
+    }
+    # if we previously couldnt split but found a close bracket, we can split
+    elsif ($char eq ')' and $can_split == 0)  {
+      $can_split = 1;
+    }
+    # if we can split and we find a comma, do so
+    elsif ($char eq ',' and $can_split == 1) {
+      # mark that we have split
+      $found_match = 1;
+      # push the begining of the string until the current index onto the return array (minus the comma)
+      push @return_array, (join "", (@char_array[0..$index-1]));
+      # recursively call the split on the rest of the string, and push onto the return array
+      push @return_array, recursiveSplit(join "", @char_array[$index+1..$#char_array]);
+      # once we have matched, break
+      last;
+    }
+    $index++;
+  }
+  # if no split performed, return original string
+  return $_[0] unless ($found_match == 1);
+  # otherwise return the split
+  return @return_array;
+}
+
+# given part of a print statement, prints it in the correct format
+sub printSubPrint() {
+  my ($print_content) = $_[0];
+  # check if we are printing a string
+  if ($print_content =~ /^\s*"(.*?)"(.*)/ or $print_content =~ /^\s*'(.*?)'(.*)/) {
+      my ($string, $remaining) = ($1, $2);
+      # we now assume that there is a % with variables to substitute
+      # remove braces
+      $remaining =~ s/[\(\)]//g;
+      # remove % and spacing
+      $remaining =~ s/^\s*%\s*//g;
+      # if remaining is not empty, we know there are no variables to subsitute
+      if ($remaining) {
+        # split the variables into a list to be used for subsituton
+        my @vars_to_sub = split /\s*,\s*/, $remaining;
+        # substitute variables before printing
+        $string = subVarsIntoString($string, @vars_to_sub);
+      }
+      print "\"$string\"";
+  } else {
+      # if we enter here, we are printing an expression
+      $print_content = sanitizeExpression($print_content);
+      print "$print_content";
+  }
 }
 
 # returns boolean depending on if end='' exists
@@ -349,13 +408,17 @@ sub getEndOfPrint {
   }
 }
 
+# performs substitution of variables in array into string. Used for formatting prints such as "%s %s" % ("hey", 5)
 sub subVarsIntoString {
   my ($string, @vars_to_sub) = @_;
+  # currently doesnt support format matching. simply replaces %word with variable
   while ($string =~ /(%\w)/) {
     my $symbol = $1;
+    # get variable
     my $variable = shift(@vars_to_sub);
     # cut leading and trailing quotes if case string
     $variable =~ s/^['"]//; $variable =~ s/['"]$//;
+    # perform swap
     $string =~ s/$symbol/$variable/;
   }
   return $string;
@@ -489,23 +552,3 @@ sub closeAllBrackets {
     print "}\n";
   }
 }
-
-# sub spaceOperators {
-#     my $line = $_[0];
-#     #provide appropriate spacing
-#     $line =~ s/\+/ + /g;
-#     $line =~ s/-/ - /g;
-#     $line =~ s/\*/ * /g;
-#     $line =~ s/\// \/ /g;
-#     $line =~ s/\/\// \/\/ /g;
-#     $line =~ s/\* \*/ \*\* /g;
-#     $line =~ s/%/ % /g;
-#     $line =~ s/  */ /g;
-#     $line =~ s/\* \*/\*\*/g;
-#     $line =~ s/\/ \//\/\//g;
-#     $line =~ s/\+ =/\+=/g;
-#     $line =~ s/- =/-=/g;
-#     $line =~ s/\* =/\*=/g;
-#     $line =~ s/\/ =/\/=/g;
-#     return $line;
-# }
