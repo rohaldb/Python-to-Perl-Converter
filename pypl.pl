@@ -32,8 +32,6 @@ while (my $line = <>) {
 # given the current line, matches the line with a method to handle it
 sub patternMatch {
     my $line = $_[0];
-    #$line = spaceOperators($line);
-
     if ($line =~ /^#!/ && $. == 1) {
         # translate #! line
         print "#!/usr/bin/perl -w\n";
@@ -73,7 +71,7 @@ sub patternMatch {
         #assignment of a variable
         printIndentation();
         variableAssignment($1,$2,$3);
-    } elsif ($line =~ /\s*(\w+)\.(\w+)\((.*)\)\s*;{0,1}\s*$/) {
+    } elsif ($line =~ /\s*(.*)\.(\w+)\((.*)\)\s*;{0,1}\s*$/) {
         # method being called on a list. can be either push or pop. Check which it is and call appropriate sub
         my $array_ref = $1; my $method = $2; my $var = $3;
         if ($method =~ /append/) {
@@ -164,14 +162,15 @@ sub popStatement {
   #add the list to our array of known lists (even though if we are popping, its likely we've seen it before)
   pushOnto(\@lists, $array_ref);
   printIndentation();
+  $array_ref = sanitizeExpression($array_ref);
   # check if we have a variable indicating index eg. pop(x) or popping final elem
   if ($var eq '') {
-    return "pop(\@$array_ref)"
+    return "pop($array_ref)"
     # print "pop(\@$array_ref);\n";
   } else {
     # clean up whatever is being pushed as it could be an expression
     $var = sanitizeExpression($var);
-    return "splice(\@$array_ref, $var, 1)";
+    return "splice($array_ref, $var, 1)";
     # print "splice \@$array_ref, $var, 1;\n";
   }
 }
@@ -182,9 +181,9 @@ sub appendStatement {
   pushOnto(\@lists, $array_ref);
   # clean up whatever is being pushed as it could be an expression
   $var = sanitizeExpression($var);
+  $array_ref = sanitizeExpression($array_ref);
   printIndentation();
-  return "push(\@$array_ref, $var)";
-  # print "push(\@$array_ref, $var);\n";
+  return "push($array_ref, $var)";
 }
 
 sub elseIfStatement {
@@ -498,7 +497,7 @@ sub variableAssignment {
       # store the list
       pushOnto(\@lists, $lhs);
       # change inner and outer braces
-      $rhs =~ s/^\s*\[/\(/;$rhs =~ s/\]\s*$/\)/;
+      $rhs =~ s/\[/\(/g;$rhs =~ s/\]/\)/g;
       $lhs = sanitizeExpression($lhs);
       print "$lhs $operator $rhs;\n";
     } elsif ($rhs =~ /sort\(/) {

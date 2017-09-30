@@ -1,25 +1,61 @@
 #!/usr/bin/perl -w
-# this program reads in an even number of lines from stdin, then prints out each line and the number of characters in that line
+# put your test script here
+
+# finds the biggest number in a list of lists
+@a = ((1),(6),(2,9,3));
+$my_max = 0;
+$i = 0;
+while ($i < scalar(@a)) {
+    foreach $i ($a[$i]) { 
+        if ($i > $my_max) {
+            $my_max = $i;
+        }
+    }
+    $i += 1;
+}
+
+print("biggest in all lists is $my_max", "\n");
+
+#arrray operations
+@a = (1,2,3);
+push(@b, 4);
+push(@b, 5);
+push(@b, 6);
+if (splice(@b, 0, 1) == 4) {
+    print("You should see me", "\n");
+        if (pop(@a) == 3) {
+        print("You should also see  me", "\n");
+        $a[1] = 100;
+        if ($a[1] == 100) {
+            print("keep on going", "\n");
+            if (scalar(@a) == scalar(@b)) {
+                print("If you see me youve passed the array operations", "\n");
+                print(int(12/5), " ", " <- should equal 2", "\n");
+            }
+        }
+    }
+}
+
+# reading in from std
+
+print("please enter some data through readlines", "\n");
+foreach $line (<STDIN>) { 
+    push(@new, $line);
+}
+
+$z = scalar(@new);
+print("the number of lines you entered was $z", "\n and i should be on a new line\n");
 
 foreach $line (<STDIN>) { 
-    push(@a, $line);
-}
-if (scalar(@a) % 2 != 0) {
-    print("we want an even number of lines please enter one more", "\n");
-    $b = <STDIN>;
-    push(@a, $b);
+    print($line, "\n");
 }
 
-#calculate lengths
-foreach $i (@a) { 
-    push(@lengths, length($i));
-}
-%my_dict = ();
-foreach $i (0..scalar(@lengths) - 1) {
-    $str = "$a[$i]";
-    $my_dict{$str} = $lengths[$i];
-}
+# hash operations
+%hash = ('Name', 'Zara', 'Age', 7, 'Class', 'First');
+$hash{'Age'} = 8; # update existing entry;
+$hash{'School'} = "St Caths";
 
-foreach $key (keys %my_dict) { 
-    print("$key has length $my_dict{$key}", "\n");
+foreach $i (sort(keys %hash)) { 
+    print($i, "\n");
+    print($hash{$i}, "\n");
 }
