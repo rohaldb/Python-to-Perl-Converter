@@ -59,10 +59,10 @@ sub patternMatch {
         continueStatement($line);
     } elsif ($line =~ /^\s*print\s*\(\s*(.*?)\s*\)\s*;{0,1}\s*$/) {
         #printing. 0 means called from print
-        printStatment($1,0);
+        printStatement($1,0);
     } elsif ($line =~ /^\s*sys.stdout.write\s*\((.*?)\)\s*;{0,1}\s*$/) {
         #printing. 1 means called from sys.stdout
-        printStatment($1, 1);
+        printStatement($1, 1);
     }  elsif ($line =~ /^\s*(\w+(?:\[['"]{0,1}\w+['"]{0,1}\]){0,1})\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {
         #assignment of a variable
         printIndentation();
@@ -118,7 +118,8 @@ sub sanitizeExpression {
   # 2. check if we need to fix braces on scalar assignment in dict or list: sanitizeBraces
   # 3. replaces variables,lists and dicts with prefixes: sanitizePrefix
   # 4. replaces method definitions with appropriate syntax: sanitize methods
-  $expr = sanitizeMethods(sanitizePrefix(sanitizeBraces(sanitizeOperators($expr))));
+  # 5. look for instances where we need to sub varibales into string eg. a = "%d" % (7)
+  $expr = sanitizeSubstitutions(sanitizeMethods(sanitizePrefix(sanitizeBraces(sanitizeOperators($expr)))));
   return $expr;
 }
 
@@ -289,7 +290,7 @@ sub conditionalStatement {
 }
 
 # prints any expression
-sub printStatment {
+sub printStatement {
     # prints any expression. first param is content, second indicates if function is being called from match on print, or match on std.out
     my ($print_content, $stdout) = @_;
     printIndentation();
@@ -315,11 +316,12 @@ sub printStatment {
     my $counter = 0;
     print "print(";
     foreach my $print (@sub_prints) {
+      # print("sub print is ", $print);
       # only put commas and spaces after the first element
       print ", \" \", " unless ($counter == 0);
       # print this part of the print statement
-      my $subPrint = evaluateSubPrint($print);
-      print("$subPrint");
+      my $subPrint = sanitizeExpression($print);
+      print($subPrint);
       # printSubPrint($print);
       $counter++;
     }
@@ -369,9 +371,10 @@ sub recursiveSplit {
   return @return_array;
 }
 
-# given part of a print statement, prints it in the correct format
-sub evaluateSubPrint {
+# checks if the content is of the form " %var " % (var) and subs variables in if so
+sub sanitizeSubstitutions {
   my ($print_content) = $_[0];
+
   # check if we are printing a string
   if ($print_content =~ /^\s*"(.*?)"(.*)/ or $print_content =~ /^\s*'(.*?)'(.*)/) {
       my ($string, $remaining) = ($1, $2);
@@ -390,10 +393,7 @@ sub evaluateSubPrint {
       return "\"$string\"";
       # print "\"$string\"";
   } else {
-      # if we enter here, we are printing an expression
-      $print_content = sanitizeExpression($print_content);
-      return "$print_content";
-      # print "$print_content";
+    return $print_content;
   }
 }
 
@@ -445,7 +445,6 @@ sub readLinesStatement {
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
     $rhs = sanitizeExpression($rhs);
-
     # if we are assigning to sys.stdin.readlines()
     if ($rhs =~ /sys.stdin.readlines()/){
       readLinesStatement($lhs);
@@ -454,7 +453,7 @@ sub variableAssignment {
 
     # the type of the lhs depends on what is on the rhs. We now go through all the cases
 
-    # declaring a hash
+    # declaring a dict
     if ($rhs =~ /^\s*\{(.*)\}\s*$/) {
       # store the dict
       pushOnto(\@dicts, $lhs);
@@ -485,11 +484,6 @@ sub variableAssignment {
       # check if we are dealing with scalar assignment to hash or array eg. a = $array[1]
       unless ($lhs =~ /(\w+)\[['"]{0,1}\w+['"]{0,1}\]/) {
         pushOnto(\@scalars,$lhs);
-      }
-
-      # check if we have a string with variable assignment eg. a = "1 %d 3" % 2
-      if ($rhs =~ /(\".*?\")\s*%\s*\({0,1}(.+?)\){0,1}/ || $rhs =~ /(\'.*?\')\s*%\s*\({0,1}(.+?)\){0,1}/) {
-        $rhs = evaluateSubPrint($rhs);
       }
 
       # if stdin, replace rhs with <STDIN>
