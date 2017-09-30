@@ -22,8 +22,8 @@ Stop: 12:40pm
 Activity: Debugging
 Comments: accounted for operators that are valid in python but not in perl. <>, not, //
 ------------------------------------------------
-Date: 24/9
-Start: 12:00
+Date: 22/9
+Start: 12:00pm
 Stop: 3:30pm
 Activity: coding
 Comments: began subset 3. multi line if and while statemnets done
@@ -47,12 +47,38 @@ Activity: Debugging
 Comments: Bug fixes. Included //=, **= and %=. Finished subset 3
 ------------------------------------------------
 Date: 24/9
-Start: 11:30am
-Stop: 1pm
-Activity: Wrote tests for subsets 1-3
+Start: 4:30pm
+Stop: 7pm
+Activity: Coding
+Comments: Began subset 4. Have append and pop working. Can now also print arrays propperly with $ and @.
 ------------------------------------------------
-Date: 24/9
+Date: 26/9
+Start: 10:30pm
+Stop: 12:30pm
+Activity: Coding and clean up
+Comments: Cleaned up a lot of code. Refactored some parts, commented others. Afterward sorted out list declaration with elements in it, which i previously forgot.
+------------------------------------------------
+Date: 26/9
 Start: 2pm
-Stop: 4pm
-Activity: Bug fixes. Included //=, **= and %=. Finished subset 3
+Stop: 6:30
+Activity: Coding
+Comments: fixed bug where couldnt do inline foreach stdin. Then redesigned print to handle % operator and end=''.
+------------------------------------------------
+Date: 26/9
+Start: 7:30pm
+Stop: 10pm
+Activity: Coding
+Comments: began working on hashs. Have them printing and assigning
+------------------------------------------------
+Date: 27/9
+Start: 10am
+Stop: 11am
+Activity: Refactoring
+Comments: Cleaned up the way for statements work to allow: for in (anything)
+------------------------------------------------
+Date: 27/9
+Start: 8pm
+Stop: 9:30pm
+Activity: Fixing
+Comments: Fixed issue where couldnt print something in format print(x, y, z)
 ------------------------------------------------
