@@ -3,6 +3,7 @@ http://www.cse.unsw.edu.au/~cs2041/assignments/pypl
 
 still to do:
 deal with //!
-cant print "sdasd", "asdjnasd"
 ['"] --> i think this is okay
 assigning list @a = b
+"while  a < b : print a; a++    #blah blah"
+a = [[1,2,3],[4,5,6], [7,8,9]]
