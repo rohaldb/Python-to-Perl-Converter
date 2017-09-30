@@ -318,7 +318,9 @@ sub printStatment {
       # only put commas and spaces after the first element
       print ", \" \", " unless ($counter == 0);
       # print this part of the print statement
-      printSubPrint($print);
+      my $subPrint = evaluateSubPrint($print);
+      print("$subPrint");
+      # printSubPrint($print);
       $counter++;
     }
     print ", \"$end\");\n";
@@ -368,7 +370,7 @@ sub recursiveSplit {
 }
 
 # given part of a print statement, prints it in the correct format
-sub printSubPrint() {
+sub evaluateSubPrint {
   my ($print_content) = $_[0];
   # check if we are printing a string
   if ($print_content =~ /^\s*"(.*?)"(.*)/ or $print_content =~ /^\s*'(.*?)'(.*)/) {
@@ -385,11 +387,13 @@ sub printSubPrint() {
         # substitute variables before printing
         $string = subVarsIntoString($string, @vars_to_sub);
       }
-      print "\"$string\"";
+      return "\"$string\"";
+      # print "\"$string\"";
   } else {
       # if we enter here, we are printing an expression
       $print_content = sanitizeExpression($print_content);
-      print "$print_content";
+      return "$print_content";
+      # print "$print_content";
   }
 }
 
@@ -478,10 +482,16 @@ sub variableAssignment {
     } else {
       # assigning scalar value
       my $prefix = "\$";
-      # check if we are dealing with scalar assignment to hash or array
+      # check if we are dealing with scalar assignment to hash or array eg. a = $array[1]
       unless ($lhs =~ /(\w+)\[['"]{0,1}\w+['"]{0,1}\]/) {
         pushOnto(\@scalars,$lhs);
       }
+
+      # check if we have a string with variable assignment eg. a = "1 %d 3" % 2
+      if ($rhs =~ /(\".*?\")\s*%\s*\({0,1}(.+?)\){0,1}/ || $rhs =~ /(\'.*?\')\s*%\s*\({0,1}(.+?)\){0,1}/) {
+        $rhs = evaluateSubPrint($rhs);
+      }
+
       # if stdin, replace rhs with <STDIN>
       if ($rhs =~ /sys.stdin.readline\(\)/) {
         $rhs = "<STDIN>";
