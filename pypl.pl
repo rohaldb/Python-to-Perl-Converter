@@ -18,7 +18,13 @@ while (my $line = <>) {
   if ($local_indentation < $global_indentation) {
     closeAllBrackets($local_indentation);
   }
-  patternMatch($line);
+  # check for optional inlines for all non conditional statements (they handle them independently)
+  if (not($line =~ /^\s*(for|while|if|)/) and $line =~ /.*;.*/) {
+    # handle inline statements if we have them
+    handleOptionalInline($line);
+  } else {
+    patternMatch($line);
+  }
   # close all unclosed brackets if end of file
   closeAllBrackets(0) if (eof || eof());
 }
@@ -34,7 +40,7 @@ sub patternMatch {
     } elsif ($line =~ /^\s*(#|$)/) {
         # Blank & comment lines can be passed unchanged
         print $line;
-    } elsif ($line =~ /^\s*import\s+sys\s*;{0,1}$/) {
+    } elsif ($line =~ /^\s*import\s*.*\s*;{0,1}$/) {
         return;
     } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+(.*?)\s*:\s*(.*)$/) {
         #for loop with range
@@ -108,7 +114,13 @@ sub generalForStatement {
   printIndentation();
   print "foreach $var ($expr) { \n";
   $global_indentation++;
-  handleOptionalInline($optional_inline);
+
+  # if we had inline statements, need to fix indentation and close parenthesis
+  if (handleOptionalInline($optional_inline)) {
+    $global_indentation--;
+    # end by closing the parenthesis
+    printIndentation(); print "}\n";
+  }
 }
 
 # given a python expression, sanitizes it through subs
@@ -217,7 +229,13 @@ sub forStdinStatement {
   pushOnto(\@scalars,$var);
   $global_indentation += 1;
   print "foreach \$$var (<STDIN>) { \n";
-  handleOptionalInline($optional_inline);
+
+  # if we had inline statements, need to fix indentation and close parenthesis
+  if (handleOptionalInline($optional_inline)) {
+    $global_indentation--;
+    # end by closing the parenthesis
+    printIndentation(); print "}\n";
+  }
 }
 
 # checks if param is a set of inline statements and handles each appropriately
@@ -230,11 +248,11 @@ sub handleOptionalInline {
     foreach my $statement (@statements) {
         patternMatch($statement);
     }
-    $global_indentation--;
-    # end by closing the parenthesis
-    printIndentation();
-    print "}\n";
+    # indicate that we did in fact have inline statements
+    return 1;
   }
+  # indicate that we didnt have inline statements
+  return 0;
 }
 
 sub forRangeStatement {
@@ -255,7 +273,12 @@ sub forRangeStatement {
     print "foreach \$$var (0..$upper - 1) {\n";
   }
   $global_indentation++;
-  handleOptionalInline($optional_inline);
+  # if we had inline statements, need to fix indentation and close parenthesis
+  if (handleOptionalInline($optional_inline)) {
+    $global_indentation--;
+    # end by closing the parenthesis
+    printIndentation(); print "}\n";
+  }
 }
 
 # applied to an expression. replaces a//b with int(a/b)
@@ -286,7 +309,12 @@ sub conditionalStatement {
   print "$type ($condition) {\n";
   $global_indentation++;
 
-  handleOptionalInline($optional_inline);
+  # if we had inline statements, need to fix indentation and close parenthesis
+  if (handleOptionalInline($optional_inline)) {
+    $global_indentation--;
+    # end by closing the parenthesis
+    printIndentation(); print "}\n";
+  }
 }
 
 # prints any expression
@@ -443,6 +471,7 @@ sub readLinesStatement {
 
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
+
     $rhs = sanitizeExpression($rhs);
     # if we are assigning to sys.stdin.readlines()
     if ($rhs =~ /sys.stdin.readlines()/){

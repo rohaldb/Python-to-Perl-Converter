@@ -7,3 +7,4 @@ deal with //!
 assigning list @a = b
 "while  a < b : print a; a++    #blah blah"
 a = [[1,2,3],[4,5,6], [7,8,9]]
+using len(a) in % 

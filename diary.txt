@@ -82,3 +82,15 @@ Stop: 9:30pm
 Activity: Fixing
 Comments: Fixed issue where couldnt print something in format print(x, y, z)
 ------------------------------------------------
+Date: 30/9
+Start: 9:30am
+Stop: 1pm
+Activity: Coding
+Comments: Fixing bugs that included inline recursives etc
+------------------------------------------------
+Date: 30/9
+Start: 1:30pm
+Stop: 3pm
+Activity: Clean up
+Comments: wrote test cases and demos, ensured they all pass
+------------------------------------------------

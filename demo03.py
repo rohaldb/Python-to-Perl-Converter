@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 # put your test script here
 
 a=[]
@@ -17,9 +17,10 @@ if len(a) != len(b) : print("almost there")
 
 import sys
 
-a = sys.stdin.readlines()
+new = sys.stdin.readlines()
 
-print("the number of lines you entered was %d" % len(a) , end='\ni should be on a new line\n')
+z = len(new)
+print("the number of lines you entered was %d" % z , end='\ni should be on a new line\n')
 
 for line in sys.stdin: print(line);
 
