@@ -374,7 +374,6 @@ sub recursiveSplit {
 # checks if the content is of the form " %var " % (var) and subs variables in if so
 sub sanitizeSubstitutions {
   my ($print_content) = $_[0];
-
   # check if we are printing a string
   if ($print_content =~ /^\s*"(.*?)"(.*)/ or $print_content =~ /^\s*'(.*?)'(.*)/) {
       my ($string, $remaining) = ($1, $2);

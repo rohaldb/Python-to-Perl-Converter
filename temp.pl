@@ -1,18 +1,25 @@
 #!/usr/bin/perl -w
 
-print("hey ben 1", "\n");
-print("hey", " ", "ben 2", "\n");
-print("hey ben 3", "\n");
-print("hey mini", " ", "sorry i mean ben", "\n");
-print("hey ben again", "\n");
-print("hey ben a final time", "");
-print("Am i ", "inline?\n");
-$x = 1;
-print($x+1, " ",  $x+2, " ",  $x+3, " ", "tomato", " potato\n");
-print($x, "\n");
-print "\n";
-print($x+1, "");
 
-print("ben is 8", " ", "years old", "\n");
-print($x, " ", "split example", " ", "years old", "\n");
-print($x, " ", "split 9", " ", "years old", "\n");
+foreach $line (<STDIN>) {
+    push(@a, $line);
+}
+if (scalar(@a) % 2 != 0) {
+    print("we want an even number of lines please enter one more", "\n");
+    $b = <STDIN>;
+    push(@a, $b);
+}
+
+#calculate lengths
+foreach $i (@a) {
+    push(@lengths, length($i));
+}
+%my_dict = ();
+foreach $i (0..scalar(@lengths) - 1) {
+    $str = "$a[$i]";
+    $my_dict{$str} = $lengths[$i];
+}
+
+foreach $key (keys %my_dict) {
+    print("$key has length $my_dict{$key}", "\n");
+}
