@@ -19,7 +19,7 @@ while (my $line = <>) {
     closeAllBrackets($local_indentation);
   }
   # check for optional inlines for all non conditional statements (they handle them independently)
-  if (not($line =~ /^\s*(for|while|if|)/) and $line =~ /.*;.*/) {
+  if (not($line =~ /^\s*(for|if|while)/) and $line =~ /.*;.*/) {
     # handle inline statements if we have them
     handleOptionalInline($line);
   } else {
