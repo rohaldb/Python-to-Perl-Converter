@@ -14,5 +14,5 @@ for i in range(len(lengths)):
     str = "%s" % a[i]
     my_dict[str] = lengths[i]
 
-for key in my_dict.keys():
+for key in sorted(my_dict.keys()):
     print("%s has length %d" % (key, my_dict[key]))

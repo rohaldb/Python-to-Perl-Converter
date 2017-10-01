@@ -326,7 +326,7 @@ sub printStatement {
       print "print \"\\n\";\n";
       return;
     }
-    # check if there is a custom end
+    # check if there is a custom end. eg print(..., end = '')
     my $end_exists = endOfPrintExists($print_content);
     # get the custom end regardless of whether it exists.
     my $end = getEndOfPrint($print_content);
@@ -357,13 +357,16 @@ sub printStatement {
 
 # since a print statement can be in a complex form like print("%s %s %d" % ("ben", "is", 8), "years old");
 # we want to split it up into multiple statements, and handle each individually.
-# however performing the split is hard since commas can exist inside ("ben", "is", 8)
-# this function recrusively goes through character by character and splits appropriately, by marking when we are inside a set of brackets
+# however performing the split is hard since commas can exist inside ("ben", "is", 8) or inside the string itself
+# this function recrusively goes through character by character and splits appropriately, by marking when we are inside a set of brackets or quotes
+#example input: "hey there, %s and %s" % ("ben", "michael"), "(nice day), isnt it?"
+#example output: ["hey there, %s" % ("ben"), "(nice day), isnt it?"]
 sub recursiveSplit {
   # the array to itterate over
   my @char_array = split //, $_[0];
-  # boolean if we are able to split or not
-  my $can_split = 1;
+  # booleans if we are able to split or not
+  my $inside_parenthesis = 0;
+  my $inside_quotes = 0;
   # index used to split the array
   my $index = 0;
   # return value initialized
@@ -371,16 +374,17 @@ sub recursiveSplit {
   # used to return the initial strring at the end if nothing was split
   my $found_match = 0;
   foreach my $char (@char_array) {
-    # if we previously could split but found an open bracket, we can no longer split
-    if ($char eq '(' and $can_split == 1) {
-      $can_split = 0;
-    }
-    # if we previously couldnt split but found a close bracket, we can split
-    elsif ($char eq ')' and $can_split == 0)  {
-      $can_split = 1;
-    }
-    # if we can split and we find a comma, do so
-    elsif ($char eq ',' and $can_split == 1) {
+    # if we have entered a set of parenthesis, cant split
+    if ($char eq '(' and $inside_parenthesis == 0) {$inside_parenthesis = 1;}
+    # if we have exited a set of parenthesis, can split
+    elsif ($char eq ')' and $inside_parenthesis == 1)  {$inside_parenthesis = 0;}
+    # if we have entered a set of quotes, cant split
+    elsif ($char eq "\"" and $inside_quotes == 0) {$inside_quotes = 1;}
+    # if we have exited a set of quotes, can split
+    elsif ($char eq "\"" and $inside_quotes == 1)  {$inside_quotes = 0;}
+
+    # if we find a comma and are able to split, do so
+    elsif ($char eq ',' and $inside_parenthesis == 0 and $inside_quotes == 0) {
       # mark that we have split
       $found_match = 1;
       # push the begining of the string until the current index onto the return array (minus the comma)
