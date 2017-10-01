@@ -35,6 +35,7 @@ new = sys.stdin.readlines()
 z = len(new)
 print("the number of lines you entered was %d" % z , end='\n and i should be on a new line\n')
 
+print("please enter some more data")
 for line in sys.stdin: print(line);
 
 # demo hash operations

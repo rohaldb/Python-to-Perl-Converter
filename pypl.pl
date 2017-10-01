@@ -357,7 +357,7 @@ sub printStatement {
       # only put commas and spaces after the first element
       print ", \" \", " unless ($counter == 0);
       # print this part of the print statement
-      # if we have "%x" % (), sanitize the variables and then sub them in
+      # if we have "%x" % (var,var...), sanitize the variables and then sub them in
       if ($print =~ /\"(.*)\"\s*%\s*(.*)/) {
         my $vars_to_sub = sanitizeExpression($2);
         $print = sanitizeSubstitutions("\"$1\" % $vars_to_sub");
@@ -492,7 +492,6 @@ sub readLinesStatement {
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
 
-    $rhs = sanitizeExpression($rhs);
     # if we are assigning to sys.stdin.readlines()
     if ($rhs =~ /sys.stdin.readlines()/){
       readLinesStatement($lhs);
@@ -505,6 +504,7 @@ sub variableAssignment {
     if ($rhs =~ /^\s*\{(.*)\}\s*$/) {
       # store the dict
       pushOnto(\@dicts, $lhs);
+      $rhs = sanitizeExpression($rhs);
       # change inner and outer braces
       $rhs =~ s/^\s*\{/\(/;$rhs =~ s/\}\s*$/\)/;
       # replace colons with commas
@@ -518,6 +518,7 @@ sub variableAssignment {
       # store the list
       pushOnto(\@lists, $lhs);
       # change inner and outer braces
+      $rhs = sanitizeExpression($rhs);
       $rhs =~ s/\[/\(/g;$rhs =~ s/\]/\)/g;
       $lhs = sanitizeExpression($lhs);
       print "$lhs $operator $rhs;\n";
@@ -535,7 +536,7 @@ sub variableAssignment {
         pushOnto(\@scalars,$lhs);
       }
 
-      # if we have "%x" % (), sanitize the variables and then sub them in
+      # if we have "%x" % (var,var..), sanitize the variables and then sub them in
       if ($rhs =~ /\"(.*)\"\s*%\s*(.*)/) {
         my $vars_to_sub = sanitizeExpression($2);
         $rhs = sanitizeSubstitutions("\"$1\" % $vars_to_sub");
@@ -543,6 +544,8 @@ sub variableAssignment {
       # if stdin, replace rhs with <STDIN>
       elsif ($rhs =~ /sys.stdin.readline\(\)/) {
         $rhs = "<STDIN>";
+      } else {
+        $rhs = sanitizeExpression($rhs);
       }
 
       $lhs = sanitizeExpression($lhs);

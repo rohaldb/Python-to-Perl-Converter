@@ -2,6 +2,7 @@
 # this program reads in an even number of lines from stdin, then prints out each line and the number of characters in that line by using a hash
 import sys
 
+print("please enter some data")
 a = sys.stdin.readlines()
 if len(a) % 2 != 0: print("we want an even number of lines please enter one more"); b = sys.stdin.readline(); a.append(b)
 
