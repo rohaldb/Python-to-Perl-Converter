@@ -1,5 +1,4 @@
-#!/usr/local/bin/python3
-
+#!/usr/bin/python
 
 print("hey ben 1")
 print("hey", "ben 2")

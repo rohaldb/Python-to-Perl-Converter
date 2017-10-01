@@ -1,7 +1,6 @@
-#!/usr/local/bin/python3
-# put your test script here
+#!/usr/bin/python
 
-# finds the biggest number in a list of lists
+# demo finding the biggest number in a list of lists
 a = [[1],[6],[2,9,3]]
 my_max = 0
 i = 0
@@ -12,7 +11,7 @@ while i < len(a):
 
 print("biggest in all lists is %d" % my_max)
 
-#arrray operations
+# demo arrray operations
 a=[]
 b=[]
 a = [1,2,3]
@@ -28,7 +27,7 @@ if b.pop(0) == 4 :
             print("keep on going")
             if len(a) == len(b) : print("If you see me youve passed the array operations"); print(int(12/5), " <- should equal 2")
 
-# reading in from std
+# demo reading lines in from sys.stdin and readlines()
 import sys
 
 print("please enter some data through readlines");
@@ -39,7 +38,7 @@ print("the number of lines you entered was %d" % z , end='\n and i should be on 
 
 for line in sys.stdin: print(line);
 
-# hash operations
+# demo hash operations
 hash = {'Name': 'Zara', 'Age': 7, 'Class': 'First'}
 hash['Age'] = 8; # update existing entry
 hash['School'] = "St Caths"; # Add new entry

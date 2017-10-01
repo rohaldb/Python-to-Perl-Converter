@@ -1,4 +1,5 @@
-#!/usr/local/bin/python3
+#!/usr/bin/python
+# demo bitwise operation
 a = 65
 b = 19
 print(a)
@@ -14,8 +15,8 @@ print(c)
 c = a >> 2
 print(c)
 
+# demo reading in and mutliline if statements
 import sys
-
 a = int(sys.stdin.readline())
 if a < 3 :
     print("why so small?")
@@ -26,6 +27,7 @@ else :
     for i in range(0,10):
         print(i*a);
 
+# demo multiline while statements
 x=0
 while (x < 10) :
     x   +=   1;
@@ -35,6 +37,7 @@ while (x < 10) :
         break;
     print(x);
 
+# demo a int and stdout
 y = int(12/5);
 print(y)
 sys.stdout.write("hopefully there are no errors by now");

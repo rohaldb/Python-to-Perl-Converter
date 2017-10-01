@@ -94,3 +94,9 @@ Stop: 3pm
 Activity: Clean up
 Comments: wrote test cases and demos, ensured they all pass
 ------------------------------------------------
+Date: 1/10
+Start: 11am
+Stop: 1pm
+Activity: Finalizing and submitting
+Comments: cleaned up test cases, fixed a minor bug of printing with comments and submited
+------------------------------------------------

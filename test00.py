@@ -1,4 +1,3 @@
-#!/usr/local/bin/python3
-
+#!/usr/bin/python
 # tests propepr formatting of the print function
-print("%s %s %d" % ("ben", "is", 8), "years old", end=" isnt he \n");
+print("%s %s %d" % ("ben", "is", 8), "years old, right?", end=" i beleive he is \n");

@@ -3,28 +3,37 @@
 # written by ben rohald 2017
 use strict;
 
+# arrays of variable names grouped by type
 our @scalars;
 our @lists;
 our @dicts;
+# represents how indented we should be. Different to local indentation which is how indented a line is. If they differ, we know we have to deal with closing conditionals
 our $global_indentation = 0;
 
+# read lines in
 while (my $line = <>) {
+
+  # calcualte how indented this line is:
   my $temp_line = $line;
   $temp_line =~ /^(\s*).*/;
-  my $local_indentation = length($1)/4;
+  my $local_indentation = length($1)/4; #divide by 4 since 4 spaces = 1 indent
+
+  # by comparing local and global indentation, do we have conditional statments that need to be closed?
+
   # if we have an empty line, dont close all brackets
   $local_indentation = 0 if ($line =~ /^\s*$/);
-  # print "the indentation of $line is $local_indentation\n";
-  if ($local_indentation < $global_indentation) {
-    closeAllBrackets($local_indentation);
-  }
-  # check for optional inlines for all non conditional statements (they handle them independently)
+  # if we are less indented than we expected to be, close brackets
+  closeAllBrackets($local_indentation) if ($local_indentation < $global_indentation);
+
+  # Do we have multiple inline statements? If so, split them up.
+  # if the line starts with a for, if or while, then ignore inline statements as they are handles later and slightly differently
   if (not($line =~ /^\s*(for|if|while)/) and $line =~ /.*;.*/) {
-    # handle inline statements if we have them
     handleOptionalInline($line);
   } else {
+    # otherwise, pattern match the line and proceed
     patternMatch($line);
   }
+
   # close all unclosed brackets if end of file
   closeAllBrackets(0) if (eof || eof());
 }
@@ -39,18 +48,19 @@ sub patternMatch {
         # Blank & comment lines can be passed unchanged
         print $line;
     } elsif ($line =~ /^\s*import\s*.*\s*;{0,1}$/) {
+        # ignore import lines
         return;
     } elsif ($line =~ /^\s*for\s+(\w+)\s+in\s+(.*?)\s*:\s*(.*)$/) {
-        #for loop with range
+        #for loop. Captures for (x) in (y) : (z)
         forStatement($1,$2, $3);
     } elsif ($line =~ /\s*while\s*(.*?)\s*:\s*(.*)/) {
-        #while statement, be it inline or multiline
+        #while loop. Captures while (x) : (y)
         conditionalStatement($1,$2, "while");
     } elsif ($line =~ /\s*\bif\b\s*(.*?)\s*:\s*(.*)/) {
-        #if statement, be it inline or multiline
+        #if statement. Captures if (x):(y)
         conditionalStatement($1,$2, "if");
     } elsif ($line =~ /\s*elif\s*(.*?)\s*:\s*;{0,1}\s*$/) {
-        #elseif statement
+        #elseif statement. Captures elif (x):(y)
         elseIfStatement($1);
     } elsif ($line =~ /\s*else\s*:\s*$/) {
         #else statement to end conditional
@@ -62,13 +72,15 @@ sub patternMatch {
         #continue statement
         continueStatement($line);
     } elsif ($line =~ /^\s*print\s*\(\s*(.*?)\s*\)\s*;{0,1}\s*$/) {
-        #printing. 0 means called from print
+        # print statement. Captures print((x))
+        # 0 passed to printStatement means matched on print statement
         printStatement($1,0);
     } elsif ($line =~ /^\s*sys.stdout.write\s*\((.*?)\)\s*;{0,1}\s*$/) {
-        #printing. 1 means called from sys.stdout
+        # print statement. Captures sys.stdout((x))
+        # 0 passed to printStatement means matched on sys.stdout
         printStatement($1, 1);
     }  elsif ($line =~ /^\s*(\w+(?:\[['"]{0,1}\w+['"]{0,1}\]){0,1})\s*(\+=|=|-=|\*=|\/=|%=|\*\*=|\/\/=)\s*(.*?);{0,1}\s*$/) {
-        #assignment of a variable
+        #assignment of a variable. captures (x) (=/+= etc) (y)
         printIndentation();
         variableAssignment($1,$2,$3);
     } elsif ($line =~ /\s*(.*)\.(\w+)\((.*)\)\s*;{0,1}\s*$/) {
@@ -86,7 +98,7 @@ sub patternMatch {
     }
 }
 
-# when pattern matched on for var in (), handles possible cases
+# checks what kind of for statment we have and calls appropriate method
 sub forStatement {
   my ($var, $expr, $optional_inline) = @_;
   # check which kind of statement we have
@@ -106,6 +118,7 @@ sub forStatement {
 # eg. for i in (array/keys dict / sorted array) etc
 sub generalForStatement {
   my ($var, $expr, $optional_inline) = @_;
+  # store the variable
   pushOnto(\@scalars, $var);
   $expr = sanitizeExpression($expr);
   $var = sanitizeExpression($var);
@@ -121,14 +134,14 @@ sub generalForStatement {
   }
 }
 
-# given a python expression, sanitizes it through subs
+# given a python expression, sanitizes it through a range of sub methods
 sub sanitizeExpression {
   my $expr = $_[0];
   # 1. replaces invalid operators with valid ones: sanitizeOperators
   # 2. check if we need to fix braces on scalar assignment in dict or list: sanitizeBraces
   # 3. replaces variables,lists and dicts with prefixes: sanitizePrefix
   # 4. replaces method definitions with appropriate syntax: sanitize methods
-  # 5. look for instances where we need to sub varibales into string eg. a = "%d" % (7)
+  # 5. look for instances where we need to sub varibales into string eg. a = "%d" % (7): sanitizeSubstitutions
   $expr = sanitizeSubstitutions(sanitizeMethods(sanitizePrefix(sanitizeBraces(sanitizeOperators($expr)))));
   return $expr;
 }
@@ -157,6 +170,7 @@ sub sanitizeMethods() {
   return $expr;
 }
 
+# handles the pop method
 sub popStatement {
   my ($array_ref, $var) = @_;
   #add the list to our array of known lists (even though if we are popping, its likely we've seen it before)
@@ -166,15 +180,15 @@ sub popStatement {
   # check if we have a variable indicating index eg. pop(x) or popping final elem
   if ($var eq '') {
     return "pop($array_ref)"
-    # print "pop(\@$array_ref);\n";
   } else {
     # clean up whatever is being pushed as it could be an expression
     $var = sanitizeExpression($var);
+    # there is no pop at index in perl, so we must splice the array
     return "splice($array_ref, $var, 1)";
-    # print "splice \@$array_ref, $var, 1;\n";
   }
 }
 
+# handles the append method
 sub appendStatement {
   my ($array_ref, $var) = @_;
   #add the list to our array of known lists
@@ -222,6 +236,7 @@ sub pushOnto {
   push @$array_ref, $new_var unless ($exists);
 }
 
+# handles for var in sy.stdin
 sub forStdinStatement {
   my ($var, $optional_inline) = @_;
   # store the variable
@@ -254,6 +269,7 @@ sub handleOptionalInline {
   return 0;
 }
 
+# handles for var in range()
 sub forRangeStatement {
   #for range loop
   my ($var, $range, $optional_inline) = @_;
@@ -288,17 +304,13 @@ sub sanitizeOperators {
     my $full = $1; my $divisor1 = $2; my $divisor2 = $3;
     $expr =~ s/$full/int($divisor1\/$divisor2)/g;
   }
-  # if line starts with not, add brackting format
-  # if ($expr =~ /(\bnot\b\s*(.*))/) {
-  #   $expr = "not($2)";
-  # }
   return $expr;
 }
 
 #used to handle if and while statments
 sub conditionalStatement {
   #loops are in the format if/while(condition): optional_inline; optional_inline ...
-  #type is either while or if
+  #type is either "while" or "if"
   my ($condition, $optional_inline, $type) = @_;
 
   printIndentation();
@@ -343,13 +355,11 @@ sub printStatement {
     my $counter = 0;
     print "print(";
     foreach my $print (@sub_prints) {
-      # print("sub print is ", $print);
       # only put commas and spaces after the first element
       print ", \" \", " unless ($counter == 0);
       # print this part of the print statement
       my $subPrint = sanitizeExpression($print);
       print($subPrint);
-      # printSubPrint($print);
       $counter++;
     }
     print ", \"$end\");\n";
@@ -402,14 +412,15 @@ sub recursiveSplit {
   return @return_array;
 }
 
-# checks if the content is of the form " %var " % (var) and subs variables in if so
+# checks if the content is of the form " %x " % (var) and subs variables in if so
 sub sanitizeSubstitutions {
   my ($print_content) = $_[0];
   # check if we are printing a string
   if ($print_content =~ /^\s*"(.*?)"(.*)/ or $print_content =~ /^\s*'(.*?)'(.*)/) {
       my ($string, $remaining) = ($1, $2);
+      # remaining will be in form % (x,y,z), % x, or empty
       # we now assume that there is a % with variables to substitute
-      # remove braces
+      # remove braces surrounding variables (if there are)
       $remaining =~ s/[\(\)]//g;
       # remove % and spacing
       $remaining =~ s/^\s*%\s*//g;
@@ -442,10 +453,10 @@ sub getEndOfPrint {
   }
 }
 
-# performs substitution of variables in array into string. Used for formatting prints such as "%s %s" % ("hey", 5)
+# performs substitution of variables in array into string. Used for formatting prints such as "%s %d" % ("hey", 5)
 sub subVarsIntoString {
   my ($string, @vars_to_sub) = @_;
-  # currently doesnt support format matching. simply replaces %word with variable
+  # currently doesnt support format matching. simply replaces %anything with variable
   while ($string =~ /(%\w)/) {
     my $symbol = $1;
     # get variable
@@ -472,6 +483,7 @@ sub readLinesStatement {
   patternMatch("for line in sys.stdin: $variable.append(line)");
 }
 
+# handles all assignment statements
 sub variableAssignment {
     my ($lhs,$operator, $rhs) = @_;
 
@@ -512,7 +524,8 @@ sub variableAssignment {
     } else {
       # assigning scalar value
       my $prefix = "\$";
-      # check if we are dealing with scalar assignment to hash or array eg. a = $array[1]
+
+      # check if we are dealing with scalar assignment to hash or array eg. $array[1] = x
       unless ($lhs =~ /(\w+)\[['"]{0,1}\w+['"]{0,1}\]/) {
         pushOnto(\@scalars,$lhs);
       }
@@ -521,6 +534,7 @@ sub variableAssignment {
       if ($rhs =~ /sys.stdin.readline\(\)/) {
         $rhs = "<STDIN>";
       }
+
       $lhs = sanitizeExpression($lhs);
       print "$lhs $operator $rhs;\n";
     }
@@ -581,7 +595,9 @@ sub printIndentation {
 # given the current lines indentation, closes the appropriate amount of brackets
 sub closeAllBrackets {
   my $local_indentation = $_[0];
+  # while current indentation does not match where it should be
   while ($global_indentation != $local_indentation) {
+    # decrease indentation and print closing brace
     $global_indentation--;
     printIndentation();
     print "}\n";

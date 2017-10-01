@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
-# this program reads in an even number of lines from stdin, then prints out each line and the number of characters in that line
+
+# this program reads in an even number of lines from stdin, then prints out each line and the number of characters in that line by using a hash
 
 foreach $line (<STDIN>) { 
     push(@a, $line);
@@ -15,11 +16,12 @@ foreach $i (@a) {
     push(@lengths, length($i));
 }
 %my_dict = ();
+# update hash to store lengths
 foreach $i (0..scalar(@lengths) - 1) {
     $str = "$a[$i]";
     $my_dict{$str} = $lengths[$i];
 }
-
+# itterate over hash and print
 foreach $key (sort(keys %my_dict)) { 
-    print("'$key' has length $my_dict{$key}", "\n");
+    print("$key has length $my_dict{$key}", "\n");
 }
