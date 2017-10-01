@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # demo bitwise operation
 a = 65
 b = 19
@@ -17,6 +17,7 @@ print(c)
 
 # demo reading in and mutliline if statements
 import sys
+print("please enter a number:")
 a = int(sys.stdin.readline())
 if a < 3 :
     print("why so small?")

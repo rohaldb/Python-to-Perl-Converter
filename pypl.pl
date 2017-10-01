@@ -141,8 +141,7 @@ sub sanitizeExpression {
   # 2. check if we need to fix braces on scalar assignment in dict or list: sanitizeBraces
   # 3. replaces variables,lists and dicts with prefixes: sanitizePrefix
   # 4. replaces method definitions with appropriate syntax: sanitize methods
-  # 5. look for instances where we need to sub varibales into string eg. a = "%d" % (7): sanitizeSubstitutions
-  $expr = sanitizeSubstitutions(sanitizeMethods(sanitizePrefix(sanitizeBraces(sanitizeOperators($expr)))));
+  $expr = sanitizeMethods(sanitizePrefix(sanitizeBraces(sanitizeOperators($expr))));
   return $expr;
 }
 
@@ -358,8 +357,14 @@ sub printStatement {
       # only put commas and spaces after the first element
       print ", \" \", " unless ($counter == 0);
       # print this part of the print statement
-      my $subPrint = sanitizeExpression($print);
-      print($subPrint);
+      # if we have "%x" % (), sanitize the variables and then sub them in
+      if ($print =~ /\"(.*)\"\s*%\s*(.*)/) {
+        my $vars_to_sub = sanitizeExpression($2);
+        $print = sanitizeSubstitutions("\"$1\" % $vars_to_sub");
+      }
+      # sanitize the whole thing if its not a string
+      $print = sanitizeExpression($print) unless ($print =~ /^\s*\"/);
+      print($print);
       $counter++;
     }
     print ", \"$end\");\n";
@@ -530,8 +535,13 @@ sub variableAssignment {
         pushOnto(\@scalars,$lhs);
       }
 
+      # if we have "%x" % (), sanitize the variables and then sub them in
+      if ($rhs =~ /\"(.*)\"\s*%\s*(.*)/) {
+        my $vars_to_sub = sanitizeExpression($2);
+        $rhs = sanitizeSubstitutions("\"$1\" % $vars_to_sub");
+      }
       # if stdin, replace rhs with <STDIN>
-      if ($rhs =~ /sys.stdin.readline\(\)/) {
+      elsif ($rhs =~ /sys.stdin.readline\(\)/) {
         $rhs = "<STDIN>";
       }
 
@@ -552,6 +562,9 @@ sub sanitizeBraces {
 # inserts appropriate prefix before known variables in an expression
 sub sanitizePrefix {
     my $expr = $_[0];
+    # if we have a string, return it and do nothing
+    if ($expr =~ /^\s*\".*\"\s*$/) {return $expr;}
+
     # prefix scalars with $
     foreach my $var (@scalars) {
       $expr =~ s/\b$var\b/\$$var/g;

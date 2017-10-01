@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # demo finding biggest number in list
 a=[1,2,3,4,6,7,99,88,999]
@@ -10,7 +10,7 @@ print(max)
 # demo the print function in different ways
 print("hey ben 1")
 print("hey", "ben 2")
-print("hey,(%s)" % "ben 3")
+print("hey, %s" % "i am cool")
 print("hey, %s" % "mini", "sorry i mean %s" % "ben")
 print("hey, ben again", end='\n')
 print("hey, ben a final, time", end='')

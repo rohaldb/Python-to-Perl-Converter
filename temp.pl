@@ -1,27 +1,28 @@
 #!/usr/bin/perl -w
 
-# this program reads in an even number of lines from stdin, then prints out each line and the number of characters in that line by using a hash
+# demo finding biggest number in list
+@a = (1,2,3,4,6,7,99,88,999);
+$max = 0;
+foreach $i (@a) {
+    if ($i > $max) {
+        $max = $i;
+    }
+}
+print($max, "\n");
 
-foreach $line (<STDIN>) { 
-    push(@a, $line);
-}
-if (scalar(@a) % 2 != 0) {
-    print("we want an even number of lines please enter one more", "\n");
-    $b = <STDIN>;
-    push(@a, $b);
-}
-
-#calculate lengths
-foreach $i (@a) { 
-    push(@lengths, length($i));
-}
-%my_dict = ();
-# update hash to store lengths
-foreach $i (0..scalar(@lengths) - 1) {
-    $str = "$a[$i]";
-    $my_dict{$str} = $lengths[$i];
-}
-# itterate over hash and print
-foreach $key (sort(keys %my_dict)) { 
-    print("$key has length $my_dict{$key}", "\n");
-}
+# demo the print function in different ways
+print("hey ben 1", "\n");
+print("hey", " ",  "ben 2", "\n");
+print("hey, i am cool", "\n");
+print("hey, mini", " ", "sorry i mean ben", "\n");
+print("hey, ben again", "\n");
+print("hey, ben a final, time", "");
+print("Am i ", "inline?\n");
+$x = 1;
+print($x+1, " ",  $x+2, " ",  $x+3, " ",  "tomato", " potato\n");
+print($x, "\n");
+print "\n";
+print($x+1, "");
+print("ben is 8", " ",  "years old", "\n");
+print($x, " ", "split, example", " ",  "years old", "\n");
+print($x, " ", "split, 9", " ",  "years old", "\n");

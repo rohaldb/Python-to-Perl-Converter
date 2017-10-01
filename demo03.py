@@ -1,5 +1,4 @@
-#!/usr/bin/python
-
+#!/usr/bin/python3
 # demo finding the biggest number in a list of lists
 a = [[1],[6],[2,9,3]]
 my_max = 0

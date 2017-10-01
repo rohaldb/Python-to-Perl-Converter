@@ -6,4 +6,4 @@ deal with //!
 ['"] --> i think this is okay
 assigning list @a = b
 using len(a) in %
-remove vars from var list after loop
+for i in range(len([1,2])):

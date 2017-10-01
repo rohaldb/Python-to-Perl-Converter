@@ -1,5 +1,4 @@
-#!/usr/bin/python
-
+#!/usr/bin/python3
 # this program reads in an even number of lines from stdin, then prints out each line and the number of characters in that line by using a hash
 import sys
 

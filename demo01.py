@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # demo inline loops and if statements. Also test operators
 x=10
