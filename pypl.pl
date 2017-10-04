@@ -12,14 +12,13 @@ our $global_indentation = 0;
 
 # read lines in
 while (my $line = <>) {
-
+  # convert all tabs to 4 spaces
+  $line =~ s/\t/    /g;
   # calcualte how indented this line is:
   my $temp_line = $line;
   $temp_line =~ /^(\s*).*/;
-  my $local_indentation = length($1)/4; #divide by 4 since 4 spaces = 1 indent
-
+  my $local_indentation = int(length($1)/4); #divide by 4 since 4 spaces = 1 indent. use int to round it down if its a fraction
   # by comparing local and global indentation, do we have conditional statments that need to be closed?
-
   # if we have an empty line, dont close all brackets
   $local_indentation = 0 if ($line =~ /^\s*$/);
   # if we are less indented than we expected to be, close brackets
@@ -357,7 +356,7 @@ sub printStatement {
       # only put commas and spaces after the first element
       print ", \" \", " unless ($counter == 0);
       # print this part of the print statement
-      # if we have "%x" % (var,var...), sanitize the variables and then sub them in
+      # if we have "%x" % (), sanitize the variables and then sub them in
       if ($print =~ /\"(.*)\"\s*%\s*(.*)/) {
         my $vars_to_sub = sanitizeExpression($2);
         $print = sanitizeSubstitutions("\"$1\" % $vars_to_sub");
@@ -536,7 +535,7 @@ sub variableAssignment {
         pushOnto(\@scalars,$lhs);
       }
 
-      # if we have "%x" % (var,var..), sanitize the variables and then sub them in
+      # if we have "%x" % (), sanitize the variables and then sub them in
       if ($rhs =~ /\"(.*)\"\s*%\s*(.*)/) {
         my $vars_to_sub = sanitizeExpression($2);
         $rhs = sanitizeSubstitutions("\"$1\" % $vars_to_sub");

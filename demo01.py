@@ -10,3 +10,8 @@ if not x == y : print(y); y += 1;
 if y == x and y < 9 : print("we're on track baby"); x+=3; y += 6;
 z = 12
 if x < y and (y-1) == z and x != y and y > (x) and (y-1) >= z and x <= (y-3) : print("if you see me you've beaten this boss");
+
+a = 12
+b = 5
+c= (a//b) ** 2 % 5
+print(c)

@@ -1,27 +1,29 @@
 #!/usr/bin/perl -w
-# this program reads in an even number of lines from stdin, then prints out each line and the number of characters in that line by using a hash
 
-print("please enter some data", "\n");
-foreach $line (<STDIN>) { 
-    push(@a, $line);
+# demo inline loops and if statements. Also test operators
+$x = 10;
+$y = 7;
+while ($x%2 == 0 or $x == 9) {
+    print($x, "\n");
+    $x -= 1;
 }
-if (scalar(@a) % 2 != 0) {
-    print("we want an even number of lines please enter one more", "\n");
-    $b = <STDIN>;
-    push(@a, $b);
+#x should be 8 at this point
+if (not $x == $y) {
+    print($y, "\n");
+    $y += 1;
 }
 
-#calculate lengths
-foreach $i (@a) { 
-    push(@lengths, length($i));
+if ($y == $x and $y < 9) {
+    print("we're on track baby", "\n");
+    $x += 3;
+    $y += 6;
 }
-%my_dict = ();
-# update hash to store lengths
-foreach $i (0..scalar(@lengths) - 1) {
-    $str = "$a[$i]";
-    $my_dict{$str} = $lengths[$i];
+$z = 12;
+if ($x < $y and ($y-1) == $z and $x != $y and $y > ($x) and ($y-1) >= $z and $x <= ($y-3)) {
+    print("if you see me you've beaten this boss", "\n");
 }
-# itterate over hash and print
-foreach $key (sort(keys %my_dict)) { 
-    print("$key has length $my_dict{$key}", "\n");
-}
+
+$a = 12;
+$b = 5;
+$c = (int($a/$b)) ** 2 % 5;
+print($c, "\n");
