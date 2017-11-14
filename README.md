@@ -1,9 +1,5 @@
-COMP[29]041 assignment 1
-http://www.cse.unsw.edu.au/~cs2041/assignments/pypl
+Python to Perl converter, written in Perl.
 
-still to do:
-deal with //!
-['"] --> i think this is okay
-assigning list @a = b
-using len(a) in %
-for i in range(len([1,2])):
+Able to translate most small programs. Enjoy :)
+
+Completed as assignment for COMP2041 at UNSW.
